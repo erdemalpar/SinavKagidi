@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sınav Kağıdı Hazırlama{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Sidebar aktif link stili */
+        .sidebar-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(5px);
+            transition: all 0.3s ease;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Animasyonlar */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Gradient backgrounds */
+        .gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .gradient-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .gradient-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .gradient-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+    </style>
+    {% block extra_styles %}{% endblock %}
+</head>
+
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="fixed left-0 top-0 h-screen w-64 bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300">
+        <!-- Logo ve Başlık -->
+        <div class="gradient-primary p-6 text-white">
+            <div class="flex items-center gap-3">
+                <i data-lucide="graduation-cap" class="w-8 h-8"></i>
+                <div>
+                    <h1 class="text-xl font-bold">Sınav Kağıdı</h1>
+                    <p class="text-sm opacity-90">Hazırlama Sistemi</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menü -->
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <a href="/"
+                class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-all">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="font-medium">Ana Sayfa</span>
+            </a>
+
+            <a href="/soru-bankasi"
+                class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-all">
+                <i data-lucide="database" class="w-5 h-5"></i>
+                <span class="font-medium">Soru Bankası</span>
+            </a>
+
+            <a href="/sinav-hazirlama"
+                class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-all">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+                <span class="font-medium">Sınav Hazırla</span>
+            </a>
+
+            <a href="/ayarlar"
+                class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-all">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span class="font-medium">Ayarlar</span>
+            </a>
+        </nav>
+
+        <!-- Footer -->
+        <div class="p-4 border-t border-slate-200">
+            <p class="text-xs text-slate-500 text-center">© 2026 Sınav Sistemi v1.0</p>
+        </div>
+    </aside>
+
+    <!-- Hamburger Menü Butonu -->
+    <button id="menuToggle"
+        class="fixed top-4 left-4 z-50 bg-white p-3 rounded-lg shadow-lg hover:bg-gray-50 transition-all">
+        <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
+    </button>
+
+    <!-- Main Content -->
+    <main id="mainContent" class="ml-64 p-8 transition-all duration-300">
+        <div class="max-w-7xl mx-auto fade-in">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Toast Bildirimleri -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // ============================================
+        // RENKLI CONSOLE LOGGING SİSTEMİ
+        // ============================================
+
+        const ConsoleLogger = {
+            // Stil şablonları
+            styles: {
+                basarili: 'background: #10b981; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
+                hata: 'background: #ef4444; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
+                uyari: 'background: #f59e0b; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
+                bilgi: 'background: #3b82f6; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
+                baslik: 'background: #667eea; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
+                veri: 'color: #64748b; font-style: italic;'
+            },
+
+            // Başarılı işlem logu
+            basarili: function (mesaj, veri = null) {
+                console.log('%c ✓ BAŞARILI ', this.styles.basarili, mesaj);
+                if (veri) {
+                    console.log('%c   └─ Veri:', this.styles.veri, veri);
+                }
+            },
+
+            // Hata logu
+            hata: function (mesaj, hataDetay = null) {
+                console.error('%c ✗ HATA ', this.styles.hata, mesaj);
+                if (hataDetay) {
+                    console.error('%c   └─ Detay:', this.styles.veri, hataDetay);
+                }
+            },
+
+            // Uyarı logu
+            uyari: function (mesaj, detay = null) {
+                console.warn('%c ⚠ UYARI ', this.styles.uyari, mesaj);
+                if (detay) {
+                    console.warn('%c   └─ Detay:', this.styles.veri, detay);
+                }
+            },
+
+            // Bilgi logu
+            bilgi: function (mesaj, veri = null) {
+                console.info('%c ℹ BİLGİ ', this.styles.bilgi, mesaj);
+                if (veri) {
+                    console.info('%c   └─ Veri:', this.styles.veri, veri);
+                }
+            },
+
+            // Bölüm başlığı
+            baslik: function (mesaj) {
+                console.log('%c ═══════════════════════════════════════════', 'color: #667eea;');
+                console.log('%c ' + mesaj, this.styles.baslik);
+                console.log('%c ═══════════════════════════════════════════', 'color: #667eea;');
+            },
+
+            // API isteği başlangıç
+            apiBaslangic: function (method, url) {
+                console.groupCollapsed('%c 🌐 API İSTEĞİ ', this.styles.bilgi, `${method} ${url}`);
+                console.log('Zaman:', new Date().toLocaleTimeString('tr-TR'));
+            },
+
+            // API isteği bitiş
+            apiBitis: function (basarili, sure, veri = null) {
+                if (basarili) {
+                    console.log('%c ✓ İstek Başarılı ', this.styles.basarili, `${sure}ms`);
+                    if (veri) console.log('Yanıt:', veri);
+                } else {
+                    console.log('%c ✗ İstek Başarısız ', this.styles.hata, `${sure}ms`);
+                    if (veri) console.error('Hata:', veri);
+                }
+                console.groupEnd();
+            }
+        };
+
+        // Global scope'a ekle
+        window.logger = ConsoleLogger;
+
+        // Sayfa yüklendiğinde
+        ConsoleLogger.baslik('🎓 SINAV KAĞIDI HAZIRLAMA SİSTEMİ');
+        ConsoleLogger.basarili('Uygulama başlatıldı', {
+            sayfa: window.location.pathname,
+            zaman: new Date().toLocaleString('tr-TR')
+        });
+
+        // ============================================
+
+        // Lucide ikonları başlat
+        lucide.createIcons();
+        logger.bilgi('Lucide ikonları yüklendi');
+
+        // Aktif sayfa belirleme
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentPath = window.location.pathname;
+            const links = document.querySelectorAll('.sidebar-link');
+
+            links.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+
+            logger.bilgi('Aktif sayfa belirlendi', { sayfa: currentPath });
+        });
+
+        // Toast bildirimi göster
+        function toastGoster(mesaj, tip = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const renkler = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+
+            const ikonlar = {
+                success: 'check-circle',
+                error: 'x-circle',
+                warning: 'alert-circle',
+                info: 'info'
+            };
+
+            toast.className = `${renkler[tip]} text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 animate-slide-in`;
+            toast.innerHTML = `
+                <i data-lucide="${ikonlar[tip]}" class="w-5 h-5"></i>
+                <span class="font-medium">${mesaj}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // Console'da da logla
+            if (tip === 'success') {
+                logger.basarili('Toast gösterildi: ' + mesaj);
+            } else if (tip === 'error') {
+                logger.hata('Toast gösterildi: ' + mesaj);
+            } else if (tip === 'warning') {
+                logger.uyari('Toast gösterildi: ' + mesaj);
+            } else {
+                logger.bilgi('Toast gösterildi: ' + mesaj);
+            }
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Global fetch wrapper - Geliştirilmiş versiyon
+        async function apiIstegi(url, options = {}) {
+            const method = options.method || 'GET';
+            const baslamaZamani = performance.now();
+
+            logger.apiBaslangic(method, url);
+
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+
+                const data = await response.json();
+                const bitisZamani = performance.now();
+                const sure = Math.round(bitisZamani - baslamaZamani);
+
+                if (!response.ok) {
+                    logger.apiBitis(false, sure, {
+                        status: response.status,
+                        mesaj: data.mesaj || 'Bilinmeyen hata'
+                    });
+                    throw new Error(data.mesaj || 'Bir hata oluştu');
+                }
+
+                logger.apiBitis(true, sure, data);
+                return data;
+            } catch (error) {
+                const bitisZamani = performance.now();
+                const sure = Math.round(bitisZamani - baslamaZamani);
+                logger.apiBitis(false, sure, error.message);
+                toastGoster(error.message, 'error');
+                throw error;
+            }
+        }
+        
+        // Sidebar Toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        let sidebarAcik = true;
+
+        if (menuToggle && sidebar && mainContent) {
+            menuToggle.addEventListener('click', () => {
+                sidebarAcik = !sidebarAcik;
+                
+                if (sidebarAcik) {
+                    sidebar.style.transform = 'translateX(0)';
+                    mainContent.style.marginLeft = '16rem'; // ml-64
+                    menuToggle.style.left = '17rem'; // butonu da kaydır
+                } else {
+                    sidebar.style.transform = 'translateX(-100%)';
+                    mainContent.style.marginLeft = '0';
+                    menuToggle.style.left = '1rem';
+                }
+                
+                logger.bilgi('Sidebar durumu değişti', { acik: sidebarAcik });
+            });
+        }
+
+        // Aktif sayfa işaretle
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const currentPath = window.location.pathname;
+        
+        sidebarLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('bg-indigo-50', 'text-indigo-600');
+                link.classList.remove('text-slate-700');
+            }
+        });
+
+        logger.basarili('Uygulama başlatıldı', {
+            sayfa: currentPath,
+            zaman: new Date().toLocaleString('tr-TR')
+        });
+    
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

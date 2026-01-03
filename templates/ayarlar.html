@@ -1,0 +1,178 @@
+{%extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Başlık -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Ayarlar</h1>
+        <p class="text-gray-600">Sınav kağıdı imza ve görünüm ayarlarını yapılandırın</p>
+    </div>
+
+    <!-- Ayar Kartı -->
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <form id="ayarForm" class="space-y-8">
+
+            <!-- İmza Ayarları Bölümü -->
+            <div>
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="p-3 bg-indigo-100 rounded-lg">
+                        <i data-lucide="pen-tool" class="w-6 h-6 text-indigo-600"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">İmza Ayarları</h2>
+                        <p class="text-sm text-gray-600">Sınav kağıdı altına eklenecek imza bilgileri</p>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- İmza Metni -->
+                    <div>
+                        <label for="imzaMetni" class="block text-sm font-medium text-gray-700 mb-2">
+                            İmza Metni
+                        </label>
+                        <input type="text" id="imzaMetni"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                            placeholder="Örn: Öğr.Gör.Erdem ALPAR" value="{{ ayarlar.imza_metni if ayarlar else '' }}">
+                        <p class="mt-2 text-sm text-gray-500">
+                            <i data-lucide="info" class="w-4 h-4 inline mr-1"></i>
+                            Bu metin sınav kağıdının altında silik bir çizgi üzerinde görünecektir
+                        </p>
+                    </div>
+
+                    <!-- Çizgi Rengi -->
+                    <div>
+                        <label for="cizgiRengi" class="block text-sm font-medium text-gray-700 mb-2">
+                            Çizgi Rengi
+                        </label>
+                        <div class="flex items-center gap-4">
+                            <input type="color" id="cizgiRengi"
+                                class="h-12 w-20 rounded-lg cursor-pointer border-2 border-gray-300"
+                                value="{{ ayarlar.cizgi_rengi if ayarlar else '#CCCCCC' }}">
+                            <span class="text-sm text-gray-600">Varsayılan: Açık Gri (#CCCCCC)</span>
+                        </div>
+                    </div>
+
+                    <!-- Çizgi Kalınlığı -->
+                    <div>
+                        <label for="cizgiKalinlik" class="block text-sm font-medium text-gray-700 mb-2">
+                            Çizgi Kalınlığı (px)
+                        </label>
+                        <div class="flex items-center gap-4">
+                            <input type="range" id="cizgiKalinlik" min="1" max="5" step="0.5" class="flex-1"
+                                value="{{ ayarlar.cizgi_kalinlik if ayarlar else '1' }}">
+                            <span id="kalinlikDeger" class="text-sm font-medium text-gray-700 w-12">1px</span>
+                        </div>
+                    </div>
+
+                    <!-- Metin Boyutu -->
+                    <div>
+                        <label for="metinBoyutu" class="block text-sm font-medium text-gray-700 mb-2">
+                            Metin Boyutu (pt)
+                        </label>
+                        <div class="flex items-center gap-4">
+                            <input type="range" id="metinBoyutu" min="8" max="16" step="1" class="flex-1"
+                                value="{{ ayarlar.metin_boyutu if ayarlar else '12' }}">
+                            <span id="boyutDeger" class="text-sm font-medium text-gray-700 w-12">12pt</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Önizleme Bölümü -->
+            <div class="border-t pt-8">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">Önizleme</h3>
+                <div id="onizleme" class="bg-gray-50 rounded-lg p-8 border-2 border-dashed border-gray-300">
+                    <div class="max-w-md mx-auto">
+                        <p class="text-gray-600 text-center mb-4">Sınav kağıdı içeriği...</p>
+                        <div class="mt-8 pt-4">
+                            <div id="onizlemeCizgi" class="border-t mb-2"
+                                style="border-color: #CCCCCC; border-width: 1px;"></div>
+                            <p id="onizlemeMetin" class="text-center text-gray-600" style="font-size: 12pt;">
+                                Öğr.Gör.Erdem ALPAR
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Butonlar -->
+            <div class="flex items-center gap-4 pt-6 border-t">
+                <button type="submit"
+                    class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-5 h-5"></i>
+                    Ayarları Kaydet
+                </button>
+                <button type="button" onclick="sifirla()"
+                    class="px-6 py-3 rounded-lg font-medium border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                    Sıfırla
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Önizleme güncelleme
+    const imzaMetni = document.getElementById('imzaMetni');
+    const cizgiRengi = document.getElementById('cizgiRengi');
+    const cizgiKalinlik = document.getElementById('cizgiKalinlik');
+    const metinBoyutu = document.getElementById('metinBoyutu');
+
+    const onizlemeMetin = document.getElementById('onizlemeMetin');
+    const onizlemeCizgi = document.getElementById('onizlemeCizgi');
+    const kalinlikDeger = document.getElementById('kalinlikDeger');
+    const boyutDeger = document.getElementById('boyutDeger');
+
+    function onizlemeGuncelle() {
+        onizlemeMetin.textContent = imzaMetni.value || 'Öğr.Gör.Erdem ALPAR';
+        onizlemeCizgi.style.borderColor = cizgiRengi.value;
+        onizlemeCizgi.style.borderWidth = cizgiKalinlik.value + 'px';
+        onizlemeMetin.style.fontSize = metinBoyutu.value + 'pt';
+
+        kalinlikDeger.textContent = cizgiKalinlik.value + 'px';
+        boyutDeger.textContent = metinBoyutu.value + 'pt';
+    }
+
+    imzaMetni.addEventListener('input', onizlemeGuncelle);
+    cizgiRengi.addEventListener('input', onizlemeGuncelle);
+    cizgiKalinlik.addEventListener('input', onizlemeGuncelle);
+    metinBoyutu.addEventListener('input', onizlemeGuncelle);
+
+    // Form gönderimi
+    document.getElementById('ayarForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const ayarlar = {
+            imza_metni: imzaMetni.value,
+            cizgi_rengi: cizgiRengi.value,
+            cizgi_kalinlik: parseFloat(cizgiKalinlik.value),
+            metin_boyutu: parseInt(metinBoyutu.value)
+        };
+
+        try {
+            const data = await apiIstegi('/ayarlar-kaydet', {
+                method: 'POST',
+                body: JSON.stringify(ayarlar)
+            });
+
+            toastGoster('Ayarlar başarıyla kaydedildi!', 'success');
+        } catch (error) {
+            console.error('Hata:', error);
+        }
+    });
+
+    function sifirla() {
+        imzaMetni.value = 'Öğr.Gör.Erdem ALPAR';
+        cizgiRengi.value = '#CCCCCC';
+        cizgiKalinlik.value = '1';
+        metinBoyutu.value = '12';
+        onizlemeGuncelle();
+        toastGoster('Ayarlar varsayılana döndürüldü', 'info');
+    }
+
+    // İlk yükleme
+    onizlemeGuncelle();
+    lucide.createIcons();
+</script>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Ana Sayfa - Sınav Kağıdı Hazırlama{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Başlık -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-4xl font-bold text-slate-800 mb-2">Hoş Geldiniz! 👋</h1>
+            <p class="text-slate-600">Sınav kağıtlarınızı kolayca oluşturun ve yönetin</p>
+        </div>
+        <button onclick="window.location.href='/sinav-hazirlama'"
+            class="gradient-primary text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all hover:scale-105">
+            <i data-lucide="plus" class="w-5 h-5 inline mr-2"></i>
+            Yeni Sınav Oluştur
+        </button>
+    </div>
+
+    <!-- İstatistik Kartları -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Toplam Soru -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all hover:scale-105">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-14 h-14 rounded-xl gradient-primary flex items-center justify-center">
+                    <i data-lucide="help-circle" class="w-7 h-7 text-white"></i>
+                </div>
+                <span class="text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                    Aktif
+                </span>
+            </div>
+            <h3 class="text-3xl font-bold text-slate-800 mb-1">{{ toplam_soru }}</h3>
+            <p class="text-slate-500 text-sm">Toplam Soru</p>
+        </div>
+
+        <!-- Toplam Sınav -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all hover:scale-105">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-14 h-14 rounded-xl gradient-success flex items-center justify-center">
+                    <i data-lucide="file-text" class="w-7 h-7 text-white"></i>
+                </div>
+                <span class="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                    Hazır
+                </span>
+            </div>
+            <h3 class="text-3xl font-bold text-slate-800 mb-1">{{ toplam_sinav }}</h3>
+            <p class="text-slate-500 text-sm">Hazırlanan Sınav</p>
+        </div>
+
+        <!-- Bu Ay -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all hover:scale-105">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-14 h-14 rounded-xl gradient-warning flex items-center justify-center">
+                    <i data-lucide="calendar" class="w-7 h-7 text-white"></i>
+                </div>
+                <span class="text-sm font-medium text-orange-600 bg-orange-50 px-3 py-1 rounded-full">
+                    Bu Ay
+                </span>
+            </div>
+            <h3 class="text-3xl font-bold text-slate-800 mb-1">0</h3>
+            <p class="text-slate-500 text-sm">Oluşturulan Sınav</p>
+        </div>
+
+        <!-- Ortalama Puan -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all hover:scale-105">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-14 h-14 rounded-xl gradient-danger flex items-center justify-center">
+                    <i data-lucide="star" class="w-7 h-7 text-white"></i>
+                </div>
+                <span class="text-sm font-medium text-purple-600 bg-purple-50 px-3 py-1 rounded-full">
+                    Ortalama
+                </span>
+            </div>
+            <h3 class="text-3xl font-bold text-slate-800 mb-1">100</h3>
+            <p class="text-slate-500 text-sm">Standart Puan</p>
+        </div>
+    </div>
+
+    <!-- Hızlı Eylemler -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Soru Bankası -->
+        <div class="bg-white rounded-2xl p-8 shadow-lg">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center">
+                    <i data-lucide="database" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Soru Bankası</h2>
+                    <p class="text-slate-500">Sorularınızı yönetin ve düzenleyin</p>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <button onclick="window.location.href='/soru-bankasi'"
+                    class="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-between group">
+                    <span>Tüm Soruları Görüntüle</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                <button onclick="acSoruEkleModal()"
+                    class="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-between group">
+                    <span>Yeni Soru Ekle</span>
+                    <i data-lucide="plus" class="w-5 h-5 group-hover:rotate-90 transition-transform"></i>
+                </button>
+                <button
+                    class="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-between group">
+                    <span>Dosyadan İçe Aktar</span>
+                    <i data-lucide="upload" class="w-5 h-5 group-hover:-translate-y-1 transition-transform"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sınav Hazırlama -->
+        <div class="bg-white rounded-2xl p-8 shadow-lg">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-xl gradient-success flex items-center justify-center">
+                    <i data-lucide="edit" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Sınav Hazırlama</h2>
+                    <p class="text-slate-500">Profesyonel sınav kağıtları oluşturun</p>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <button onclick="window.location.href='/sinav-hazirlama'"
+                    class="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-between group">
+                    <span>Yeni Sınav Başlat</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                <button onclick="window.location.href='/ayarlar'"
+                    class="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-between group">
+                    <span>Antet Ayarları</span>
+                    <i data-lucide="settings" class="w-5 h-5 group-hover:rotate-90 transition-transform"></i>
+                </button>
+                <button
+                    class="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-between group">
+                    <span>Şablonları Görüntüle</span>
+                    <i data-lucide="layout-template" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Son Aktiviteler -->
+    <div class="bg-white rounded-2xl p-8 shadow-lg">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                <i data-lucide="activity" class="w-7 h-7 text-purple-600"></i>
+                Son Aktiviteler
+            </h2>
+            <button class="text-purple-600 hover:text-purple-700 font-medium text-sm">
+                Tümünü Görüntüle
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all">
+                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                    <i data-lucide="check" class="w-6 h-6 text-green-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium text-slate-800">Sistem kurulumu tamamlandı</p>
+                    <p class="text-sm text-slate-500">Hoş geldiniz! Sistemi kullanmaya başlayabilirsiniz.</p>
+                </div>
+                <span class="text-sm text-slate-400">Şimdi</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function acSoruEkleModal() {
+        window.location.href = '/soru-bankasi';
+    }
+
+    // İkonları yeniden başlat
+    setTimeout(() => {
+        lucide.createIcons();
+    }, 100);
+</script>
+{% endblock %}

@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Sınav Önizleme - {{ sinav.baslik }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    @media print {
+        @page {
+            margin: 0;
+            size: A4;
+        }
+
+        body {
+            background: white;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        /* Tüm gereksiz elementleri gizle */
+        nav,
+        aside,
+        header,
+        footer,
+        .no-print,
+        #sidebar,
+        #menuToggle {
+            display: none !important;
+        }
+
+        /* Ana içeriği sıfırla */
+        main {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: none !important;
+        }
+
+        /* Sınav Kağıdı Ayarları */
+        .sinav-kagidi {
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 210mm !important;
+            /* A4 Genişliği */
+        }
+
+        .a4-sayfa {
+            padding: 2.5cm 2cm 2cm 2cm !important;
+            /* Standart kenar boşlukları */
+            width: 100% !important;
+            margin: 0 !important;
+            min-height: auto !important;
+            box-shadow: none !important;
+        }
+
+        /* Sayfa sonu ayarları */
+        .soru-blok {
+            break-inside: avoid;
+            /* Soruyu bölme */
+            page-break-inside: avoid;
+        }
+    }
+
+    /* Ekran Görüntüsü Ayarları */
+    .sinav-kagidi {
+        background: white;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+        width: 210mm;
+        margin: 0 auto;
+        min-height: 297mm;
+    }
+
+    .a4-sayfa {
+        padding: 2.5cm 2cm 2cm 2cm;
+        height: 100%;
+        position: relative;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 pb-20">
+    <!-- Kontrol Paneli -->
+    <div
+        class="no-print bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sticky top-4 z-40 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="javascript:history.back()"
+                class="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-medium">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                <span>Geri Dön</span>
+            </a>
+            <div class="h-8 w-px bg-slate-200 hidden sm:block"></div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800">{{ sinav.baslik }}</h1>
+                <p class="text-xs text-slate-500">{{ sinav.sorular|length }} Soru • {{
+                    sinav.sorular|sum(attribute='soru.puan') }} Puan</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="window.print()"
+                class="flex items-center gap-2 px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span>Yazdır</span>
+            </button>
+            <button onclick="pdfOlustur()"
+                class="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl hover:scale-105">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>PDF İndir</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Sınav Kağıdı -->
+    <div id="sinavKagidi" class="sinav-kagidi">
+        <div class="a4-sayfa">
+
+            <!-- Antet (Logo, Başlık vs.) -->
+            <header class="border-b-4 border-slate-900 pb-6 mb-8 text-center">
+                {% if ayarlar.okul_adi %}
+                <h1 class="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">{{ ayarlar.okul_adi }}</h1>
+                {% endif %}
+
+                <h2 class="text-lg font-bold text-slate-700 mb-1">
+                    {{ ayarlar.egitim_yili }} Eğitim Öğretim Yılı {{ ayarlar.donem }} {{ sinav.baslik }}
+                </h2>
+
+                <!-- Öğrenci Bilgi Alanı -->
+                <div class="mt-8 grid grid-cols-2 gap-x-12 gap-y-4 text-left text-sm font-medium">
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold text-slate-900 min-w-[80px]">Adı Soyadı:</span>
+                        <div class="flex-1 border-b border-black border-dotted h-4"></div>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold text-slate-900 min-w-[60px]">Sınıfı:</span>
+                        <div class="flex-1 border-b border-black border-dotted h-4"></div>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold text-slate-900 min-w-[80px]">Numarası:</span>
+                        <div class="flex-1 border-b border-black border-dotted h-4"></div>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold text-slate-900 min-w-[60px]">Tarih:</span>
+                        <span class="flex-1 border-b border-black border-dotted h-4 pb-0.5 pl-2 font-normal">{{
+                            sinav.tarih or ayarlar.tarih or '' }}</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Sorular -->
+            <div class="space-y-8">
+                {% for sinav_sorusu in sinav.sorular %}
+                {% set soru = sinav_sorusu.soru %}
+
+                <div class="soru-blok relative group">
+                    <div class="flex items-start gap-4">
+                        <!-- Soru Numarası -->
+                        <div class="flex-shrink-0 pt-1">
+                            <span
+                                class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-900 text-white font-bold text-sm shadow-sm print:bg-black print:text-white">
+                                {{ loop.index }}
+                            </span>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <!-- ÜST GÖRSEL -->
+                            {% if soru.gorsel_yolu and soru.gorsel_konum == 'ustte' %}
+                            <div class="mb-4 text-center">
+                                <img src="{{ soru.gorsel_yolu }}" alt="Soru görseli"
+                                    class="max-w-full h-auto max-h-60 rounded-lg border border-slate-200 object-contain mx-auto print:border-none">
+                            </div>
+                            {% endif %}
+
+                            <div
+                                class="flex flex-col sm:flex-row gap-6 {{ 'items-start' if soru.gorsel_konum == 'yanda' else '' }}">
+                                <div class="flex-1">
+                                    <!-- Soru Metni -->
+                                    <div
+                                        class="text-[15px] text-slate-900 leading-relaxed font-medium mb-3 text-justify whitespace-pre-line">
+                                        {{ soru.soru_metni }}</div>
+
+                                    <!-- ARA GÖRSEL -->
+                                    {% if soru.gorsel_yolu and (soru.gorsel_konum == 'arada' or not soru.gorsel_konum)
+                                    %}
+                                    <div class="my-4 text-center">
+                                        <img src="{{ soru.gorsel_yolu }}" alt="Soru görseli"
+                                            class="max-w-full h-auto max-h-60 rounded-lg border border-slate-200 object-contain mx-auto print:border-none">
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Şıklar -->
+                                    {% if soru.secenek_a or soru.secenek_b or soru.secenek_c or soru.secenek_d or
+                                    soru.secenek_e %}
+
+                                    <!-- Şık Düzeni Sınıfları -->
+                                    {% set sik_class = 'space-y-2' %} {# Varsayılan: Alt alta #}
+                                    {% if soru.sik_duzeni == 'yan_yana' %}
+                                    {% set sik_class = 'flex flex-wrap gap-x-6 gap-y-2' %}
+                                    {% elif soru.sik_duzeni == 'iki_sutun' %}
+                                    {% set sik_class = 'grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2' %}
+                                    {% endif %}
+
+                                    <div class="mt-4 {{ sik_class }} ml-1">
+                                        {% for sik_harfi in ['A', 'B', 'C', 'D', 'E'] %}
+                                        {% set sik_attr = 'secenek_' + sik_harfi|lower %}
+                                        {% if soru[sik_attr] %}
+                                        <div class="flex items-start gap-2 min-w-[100px] group/sik">
+                                            <span
+                                                class="flex-shrink-0 w-6 h-6 rounded-full border border-slate-400 flex items-center justify-center text-xs font-bold print:border-black group-hover/sik:border-slate-600 transition-colors">{{
+                                                sik_harfi }}</span>
+                                            <span class="text-sm text-slate-900 pt-0.5 leading-snug">{{ soru[sik_attr]
+                                                }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- YAN GÖRSEL -->
+                                {% if soru.gorsel_yolu and soru.gorsel_konum == 'yanda' %}
+                                <div class="flex-shrink-0 w-full sm:w-1/3 ml-0 sm:ml-4 mb-4 sm:mb-0">
+                                    <img src="{{ soru.gorsel_yolu }}" alt="Soru görseli"
+                                        class="w-full h-auto rounded-lg border border-slate-200 object-contain print:border-none bg-slate-50">
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Puan (Sağda Sabit) -->
+                        {% if ayarlar.puan_goster %}
+                        <div class="flex-shrink-0 ml-2 pt-1 no-print">
+                            <div class="text-center border border-slate-300 rounded px-2 py-0.5 bg-slate-50">
+                                <div class="text-[10px] text-slate-400 font-bold uppercase">Puan</div>
+                                <div class="text-base font-bold text-slate-700 leading-none">{{ soru.puan }}</div>
+                            </div>
+                        </div>
+                        {# Yazdırma için puan gösterimi (Genelde istenmez ama opsiyonel) #}
+                        <div
+                            class="hidden print:block absolute top-0 right-0 text-xs font-bold border border-black px-1 rounded">
+                            {{ soru.puan }}p
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Sayfa Altı (İmza vb.) -->
+            {% if ayarlar_imza %}
+            <div class="mt-16 pt-8 border-t-2 border-slate-900 page-break-avoid">
+                <div class="text-center">
+                    <p class="font-bold text-slate-900">{{ ayarlar_imza.imza_metni }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+    function pdfOlustur() {
+        const element = document.getElementById('sinavKagidi');
+        const opt = {
+            margin: 0,
+            filename: '{{ sinav.baslik }}.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        toastGoster('PDF oluşturuluyor...', 'info');
+        html2pdf().set(opt).from(element).save().then(() => {
+            toastGoster('PDF indirildi!', 'success');
+        });
+    }
+
+    // İkonları yükle
+    setTimeout(() => lucide.createIcons(), 100);
+</script>
+{% endblock %}
