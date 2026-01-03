@@ -205,7 +205,16 @@ def sinav_kaydet():
         yeni_sinav = SinavKagidi(
             baslik=data.get('baslik'),
             aciklama=data.get('aciklama'),
-            tarih=data.get('tarih')
+            tarih=data.get('tarih'),
+            okul_adi=data.get('okul_adi'),
+            yazi_fontu=data.get('yazi_fontu'),
+            yazi_boyutu=data.get('yazi_boyutu', 12),
+            yazi_rengi=data.get('yazi_rengi', '#000000'),
+            yazi_stili=data.get('yazi_stili', 'normal'),
+            gorsel_boyutu=data.get('gorsel_boyutu', 100),
+            logo_sol=data.get('logo_sol'),
+            logo_sag=data.get('logo_sag'),
+            logo_boyutu=data.get('logo_boyutu', 80)
         )
         db.session.add(yeni_sinav)
         db.session.flush()

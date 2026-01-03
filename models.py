@@ -91,6 +91,17 @@ class SinavKagidi(db.Model):
     baslik = db.Column(db.String(200), nullable=False)
     aciklama = db.Column(db.Text)
     tarih = db.Column(db.String(50))
+    # Görünüm Ayarları
+    okul_adi = db.Column(db.String(200))
+    yazi_fontu = db.Column(db.String(100), default='font-sans')
+    yazi_boyutu = db.Column(db.Integer, default=12)
+    yazi_rengi = db.Column(db.String(20), default='#000000')
+    yazi_stili = db.Column(db.String(20), default='normal')
+    gorsel_boyutu = db.Column(db.Integer, default=100) # Yüzde olarak
+    logo_sol = db.Column(db.String(500))
+    logo_sag = db.Column(db.String(500))
+    logo_boyutu = db.Column(db.Integer, default=80) # Pixel olarak
+    
     olusturma_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
     guncelleme_tarihi = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

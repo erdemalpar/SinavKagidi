@@ -113,19 +113,36 @@
     </div>
 
     <!-- Sınav Kağıdı -->
-    <div id="sinavKagidi" class="sinav-kagidi">
+    <div id="sinavKagidi" style="font-family: {{ sinav.yazi_fontu or "inherit" }}; font-size: {{ sinav.yazi_boyutu or 12 }}px; color: {{ sinav.yazi_rengi or "#000000" }}; font-weight: {{ sinav.yazi_stili or "normal" }};" class="sinav-kagidi">
         <div class="a4-sayfa">
 
             <!-- Antet (Logo, Başlık vs.) -->
-            <header class="border-b-4 border-slate-900 pb-6 mb-8 text-center">
-                {% if ayarlar.okul_adi %}
-                <h1 class="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">{{ ayarlar.okul_adi }}</h1>
-                {% endif %}
-
-                <h2 class="text-lg font-bold text-slate-700 mb-1">
-                    {{ ayarlar.egitim_yili }} Eğitim Öğretim Yılı {{ ayarlar.donem }} {{ sinav.baslik }}
-                </h2>
-
+            <header class="border-b-4 border-slate-900 pb-6 mb-8">
+                    <div class="flex items-center justify-between gap-4">
+                        <!-- Sol Logo -->
+                        <div class="w-[150px] flex-shrink-0 text-left flex justify-start">
+                            {% if sinav.logo_sol %}
+                            <img src="{{ sinav.logo_sol }}" alt="" style="height: {{ sinav.logo_boyutu }}px; width: auto; max-width: 100%; object-fit: contain;">
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Orta Metin -->
+                        <div class="flex-1 text-center">
+                            <h1 class="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase leading-tight">{{ sinav.okul_adi or ayarlar.okul_adi or "" }}</h1>
+            
+                            <h2 class="text-lg font-bold text-slate-700 mb-1 leading-snug">
+                                {{ ayarlar.egitim_yili }} Eğitim Öğretim Yılı {{ ayarlar.donem }} {{ sinav.baslik }}
+                            </h2>
+                        </div>
+                
+                        <!-- Sağ Logo -->
+                        <div class="w-[150px] flex-shrink-0 text-right flex justify-end">
+                            {% if sinav.logo_sag %}
+                            <img src="{{ sinav.logo_sag }}" alt="" style="height: {{ sinav.logo_boyutu }}px; width: auto; max-width: 100%; object-fit: contain;">
+                            {% endif %}
+                        </div>
+                    </div>
+    
                 <!-- Öğrenci Bilgi Alanı -->
                 <div class="mt-8 grid grid-cols-2 gap-x-12 gap-y-4 text-left text-sm font-medium">
                     <div class="flex items-end gap-2">
@@ -167,7 +184,7 @@
                             <!-- ÜST GÖRSEL -->
                             {% if soru.gorsel_yolu and soru.gorsel_konum == 'ustte' %}
                             <div class="mb-4 text-center">
-                                <img src="{{ soru.gorsel_yolu }}" alt="Soru görseli"
+                                <img src="{{ soru.gorsel_yolu }}" style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;" alt="Soru görseli"
                                     class="max-w-full h-auto max-h-60 rounded-lg border border-slate-200 object-contain mx-auto print:border-none">
                             </div>
                             {% endif %}
@@ -184,7 +201,7 @@
                                     {% if soru.gorsel_yolu and (soru.gorsel_konum == 'arada' or not soru.gorsel_konum)
                                     %}
                                     <div class="my-4 text-center">
-                                        <img src="{{ soru.gorsel_yolu }}" alt="Soru görseli"
+                                        <img src="{{ soru.gorsel_yolu }}" style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;" alt="Soru görseli"
                                             class="max-w-full h-auto max-h-60 rounded-lg border border-slate-200 object-contain mx-auto print:border-none">
                                     </div>
                                     {% endif %}
@@ -221,7 +238,7 @@
                                 <!-- YAN GÖRSEL -->
                                 {% if soru.gorsel_yolu and soru.gorsel_konum == 'yanda' %}
                                 <div class="flex-shrink-0 w-full sm:w-1/3 ml-0 sm:ml-4 mb-4 sm:mb-0">
-                                    <img src="{{ soru.gorsel_yolu }}" alt="Soru görseli"
+                                    <img src="{{ soru.gorsel_yolu }}" style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;" alt="Soru görseli"
                                         class="w-full h-auto rounded-lg border border-slate-200 object-contain print:border-none bg-slate-50">
                                 </div>
                                 {% endif %}
