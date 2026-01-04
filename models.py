@@ -88,7 +88,9 @@ class SinavKagidi(db.Model):
     __tablename__ = 'sinav_kagitlari'
     
     id = db.Column(db.Integer, primary_key=True)
-    baslik = db.Column(db.String(200), nullable=False)
+    baslik = db.Column(db.String(200), nullable=True) # Artık zorunlu değil (App seviyesinde)
+    egitim_yili = db.Column(db.String(50))
+    donem = db.Column(db.String(100))
     aciklama = db.Column(db.Text)
     tarih = db.Column(db.String(50))
     # Görünüm Ayarları

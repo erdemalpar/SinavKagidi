@@ -203,7 +203,9 @@ def sinav_kaydet():
     try:
         data = request.json
         yeni_sinav = SinavKagidi(
-            baslik=data.get('baslik'),
+            baslik=data.get('baslik', ''),
+            egitim_yili=data.get('egitim_yili'),
+            donem=data.get('donem'),
             aciklama=data.get('aciklama'),
             tarih=data.get('tarih'),
             okul_adi=data.get('okul_adi'),
