@@ -195,7 +195,28 @@ def sinav_hazirlama():
         ayarlar = SinavAyarlari()
         db.session.add(ayarlar)
         db.session.commit()
-    return render_template('sinav_hazirlama.html', sorular=sorular, ayarlar=ayarlar)
+    
+    # Düzenleme modu: URL'den sınav ID'si gelirse o sınavı yükle
+    sinav_id = request.args.get('sinav')
+    eski_sinav = None
+    if sinav_id:
+        eski_sinav = SinavKagidi.query.get(sinav_id)
+        
+    return render_template('sinav_hazirlama.html', sorular=sorular, ayarlar=ayarlar, eski_sinav=eski_sinav)
+
+@app.template_filter('turkce_tarih')
+def turkce_tarih_filter(tarih_str):
+    if not tarih_str:
+        return ""
+    try:
+        from datetime import datetime
+        # Tarih formatı: YYYY-MM-DD
+        dt = datetime.strptime(tarih_str, '%Y-%m-%d')
+        aylar = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+                'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
+        return f"{dt.day} {aylar[dt.month]} {dt.year}"
+    except:
+        return tarih_str
 
 @app.route('/sinav-kaydet', methods=['POST'])
 def sinav_kaydet():
@@ -208,7 +229,9 @@ def sinav_kaydet():
             donem=data.get('donem'),
             aciklama=data.get('aciklama'),
             tarih=data.get('tarih'),
+            saat=data.get('saat'), # Yeni eklenen
             okul_adi=data.get('okul_adi'),
+            imza_metni=data.get('imza_metni'), # Yeni İmza Metni
             yazi_fontu=data.get('yazi_fontu'),
             yazi_boyutu=data.get('yazi_boyutu', 12),
             yazi_rengi=data.get('yazi_rengi', '#000000'),

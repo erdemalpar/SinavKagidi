@@ -93,6 +93,7 @@ class SinavKagidi(db.Model):
     donem = db.Column(db.String(100))
     aciklama = db.Column(db.Text)
     tarih = db.Column(db.String(50))
+    saat = db.Column(db.String(10)) # Sınav saati
     # Görünüm Ayarları
     okul_adi = db.Column(db.String(200))
     yazi_fontu = db.Column(db.String(100), default='font-sans')
@@ -103,6 +104,7 @@ class SinavKagidi(db.Model):
     logo_sol = db.Column(db.String(500))
     logo_sag = db.Column(db.String(500))
     logo_boyutu = db.Column(db.Integer, default=80) # Pixel olarak
+    imza_metni = db.Column(db.String(200), default='Öğr.Gör.Erdem ALPAR')
     
     olusturma_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
     guncelleme_tarihi = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

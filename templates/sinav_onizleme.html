@@ -62,7 +62,29 @@
         }
     }
 
+    /* Manuel Sayfa Sonu */
+    .sayfa-basi {
+        break-before: page !important;
+        page-break-before: always !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        border-top: none !important;
+    }
+    }
+
     /* Ekran Görüntüsü Ayarları */
+    .sayfa-basi-gosterge {
+        display: none;
+    }
+
+    .sayfa-basi .sayfa-basi-gosterge {
+        display: flex;
+    }
+
+    .sayfa-basi {
+        margin-top: 2rem;
+    }
+
     .sinav-kagidi {
         background: white;
         box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
@@ -85,7 +107,7 @@
     <div
         class="no-print bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sticky top-4 z-40 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-4">
-            <a href="javascript:history.back()"
+            <a href="{{ url_for('sinav_hazirlama', sinav=sinav.id) }}"
                 class="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors font-medium">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 <span>Geri Dön</span>
@@ -113,46 +135,51 @@
     </div>
 
     <!-- Sınav Kağıdı -->
-    <div id="sinavKagidi" style="font-family: {{ sinav.yazi_fontu or "inherit" }}; font-size: {{ sinav.yazi_boyutu or 12 }}px; color: {{ sinav.yazi_rengi or "#000000" }}; font-weight: {{ sinav.yazi_stili or "normal" }};" class="sinav-kagidi">
+    <div id="sinavKagidi" style="font-family: {{ sinav.yazi_fontu or " inherit" }}; font-size: {{ sinav.yazi_boyutu or
+        12 }}px; color: {{ sinav.yazi_rengi or "#000000" }}; font-weight: {{ sinav.yazi_stili or "normal" }};"
+        class="sinav-kagidi">
         <div class="a4-sayfa">
 
             <!-- Antet (Logo, Başlık vs.) -->
             <header class="border-b-4 border-slate-900 pb-6 mb-8">
-                    <div class="flex items-center justify-between gap-4">
-                        <!-- Sol Logo -->
-                        <div class="w-[150px] flex-shrink-0 text-left flex justify-start">
-                            {% if sinav.logo_sol %}
-                            <img src="{{ sinav.logo_sol }}" alt="" style="height: {{ sinav.logo_boyutu }}px; width: auto; max-width: 100%; object-fit: contain;">
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Orta Metin -->
-                        <div class="flex-1 text-center">
-                            <h1 class="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase leading-tight">{{ sinav.okul_adi or ayarlar.okul_adi or "" }}</h1>
-            
-                            <h2 class="text-lg font-bold text-slate-700 mb-0.5 leading-snug uppercase">
-                                {{ sinav.egitim_yili or ayarlar.egitim_yili }} Eğitim Öğretim Yılı
-                            </h2>
-
-                            <h3 class="text-base font-bold text-slate-700 mb-0.5 leading-snug uppercase">
-                                {{ sinav.donem or ayarlar.donem }}
-                            </h3>
-
-                            {% if sinav.baslik %}
-                            <h4 class="text-base font-bold text-slate-700 leading-snug">
-                                {{ sinav.baslik }}
-                            </h4>
-                            {% endif %}
-                        </div>
-                
-                        <!-- Sağ Logo -->
-                        <div class="w-[150px] flex-shrink-0 text-right flex justify-end">
-                            {% if sinav.logo_sag %}
-                            <img src="{{ sinav.logo_sag }}" alt="" style="height: {{ sinav.logo_boyutu }}px; width: auto; max-width: 100%; object-fit: contain;">
-                            {% endif %}
-                        </div>
+                <div class="flex items-center justify-between gap-4">
+                    <!-- Sol Logo -->
+                    <div class="w-[150px] flex-shrink-0 text-left flex justify-start">
+                        {% if sinav.logo_sol %}
+                        <img src="{{ sinav.logo_sol }}" alt=""
+                            style="height: {{ sinav.logo_boyutu }}px; width: auto; max-width: 100%; object-fit: contain;">
+                        {% endif %}
                     </div>
-    
+
+                    <!-- Orta Metin -->
+                    <div class="flex-1 text-center">
+                        <h1 class="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase leading-tight">{{
+                            sinav.okul_adi or ayarlar.okul_adi or "" }}</h1>
+
+                        <h2 class="text-lg font-bold text-slate-700 mb-0.5 leading-snug uppercase">
+                            {{ sinav.egitim_yili or ayarlar.egitim_yili }} Eğitim Öğretim Yılı
+                        </h2>
+
+                        <h3 class="text-base font-bold text-slate-700 mb-0.5 leading-snug uppercase">
+                            {{ sinav.donem or ayarlar.donem }}
+                        </h3>
+
+                        {% if sinav.baslik %}
+                        <h4 class="text-base font-bold text-slate-700 leading-snug">
+                            {{ sinav.baslik }}
+                        </h4>
+                        {% endif %}
+                    </div>
+
+                    <!-- Sağ Logo -->
+                    <div class="w-[150px] flex-shrink-0 text-right flex justify-end">
+                        {% if sinav.logo_sag %}
+                        <img src="{{ sinav.logo_sag }}" alt=""
+                            style="height: {{ sinav.logo_boyutu }}px; width: auto; max-width: 100%; object-fit: contain;">
+                        {% endif %}
+                    </div>
+                </div>
+
                 <!-- Öğrenci Bilgi Alanı -->
                 <div class="mt-8 grid grid-cols-2 gap-x-12 gap-y-4 text-left text-sm font-medium">
                     <div class="flex items-end gap-2">
@@ -170,7 +197,9 @@
                     <div class="flex items-end gap-2">
                         <span class="font-bold text-slate-900 min-w-[60px]">Tarih:</span>
                         <span class="flex-1 border-b border-black border-dotted h-4 pb-0.5 pl-2 font-normal">{{
-                            sinav.tarih or ayarlar.tarih or '' }}</span>
+                            sinav.tarih|turkce_tarih or ayarlar.tarih|turkce_tarih or '' }}
+                            {% if sinav.saat %} / {{ sinav.saat }}{% endif %}
+                        </span>
                     </div>
                 </div>
             </header>
@@ -181,6 +210,22 @@
                 {% set soru = sinav_sorusu.soru %}
 
                 <div class="soru-blok relative group">
+                    <!-- Manuel Sayfa Sonu Kontrolü -->
+                    <div class="absolute -top-6 left-0 right-0 hidden group-hover:flex justify-center z-10 no-print">
+                        <button onclick="sayfaSonuToggle(this)"
+                            class="bg-slate-800 text-white text-xs px-3 py-1 rounded-full shadow hover:bg-black transition cursor-pointer flex items-center gap-1">
+                            <i data-lucide="scissors" class="w-3 h-3"></i>
+                            Yeni Sayfadan Başlat
+                        </button>
+                    </div>
+
+                    <!-- Görsel Gösterge (Ekranda görünür, baskıda gizli) -->
+                    <div class="sayfa-basi-gosterge hidden items-center justify-center gap-2 py-4 no-print opacity-50">
+                        <div class="h-px bg-red-400 flex-1 border-dashed border-t border-red-400"></div>
+                        <span class="text-xs font-bold text-red-500 uppercase">Yeni Sayfa</span>
+                        <div class="h-px bg-red-400 flex-1 border-dashed border-t border-red-400"></div>
+                    </div>
+
                     <div class="flex items-start gap-4">
                         <!-- Soru Numarası -->
                         <div class="flex-shrink-0 pt-1">
@@ -194,7 +239,9 @@
                             <!-- ÜST GÖRSEL -->
                             {% if soru.gorsel_yolu and soru.gorsel_konum == 'ustte' %}
                             <div class="mb-4 text-center">
-                                <img src="{{ soru.gorsel_yolu }}" style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;" alt="Soru görseli"
+                                <img src="{{ soru.gorsel_yolu }}"
+                                    style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;"
+                                    alt="Soru görseli"
                                     class="max-w-full h-auto max-h-60 rounded-lg border border-slate-200 object-contain mx-auto print:border-none">
                             </div>
                             {% endif %}
@@ -204,14 +251,16 @@
                                 <div class="flex-1">
                                     <!-- Soru Metni -->
                                     <div
-                                        class="text-[15px] text-slate-900 leading-relaxed font-medium mb-3 text-justify whitespace-pre-line">
+                                        class="text-inherit text-slate-900 leading-relaxed font-medium mb-3 text-justify whitespace-pre-line">
                                         {{ soru.soru_metni }}</div>
 
                                     <!-- ARA GÖRSEL -->
                                     {% if soru.gorsel_yolu and (soru.gorsel_konum == 'arada' or not soru.gorsel_konum)
                                     %}
                                     <div class="my-4 text-center">
-                                        <img src="{{ soru.gorsel_yolu }}" style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;" alt="Soru görseli"
+                                        <img src="{{ soru.gorsel_yolu }}"
+                                            style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;"
+                                            alt="Soru görseli"
                                             class="max-w-full h-auto max-h-60 rounded-lg border border-slate-200 object-contain mx-auto print:border-none">
                                     </div>
                                     {% endif %}
@@ -234,13 +283,22 @@
                                         {% if soru[sik_attr] %}
                                         <div class="flex items-start gap-2 min-w-[100px] group/sik">
                                             <span
-                                                class="flex-shrink-0 w-6 h-6 rounded-full border border-slate-400 flex items-center justify-center text-xs font-bold print:border-black group-hover/sik:border-slate-600 transition-colors">{{
+                                                class="flex-shrink-0 rounded-full border border-slate-400 flex items-center justify-center font-bold print:border-black group-hover/sik:border-slate-600 transition-colors"
+                                                style="width: 1.6em; height: 1.6em; font-size: 0.75em;">{{
                                                 sik_harfi }}</span>
-                                            <span class="text-sm text-slate-900 pt-0.5 leading-snug">{{ soru[sik_attr]
+                                            <span class="text-inherit text-slate-900 pt-0.5 leading-snug">{{
+                                                soru[sik_attr]
                                                 }}</span>
                                         </div>
                                         {% endif %}
                                         {% endfor %}
+                                    </div>
+                                    {% endif %}
+
+                                    {# Yazdırma için Puan (Sorunun sonunda) #}
+                                    {% if ayarlar.puan_goster %}
+                                    <div class="hidden print:block text-right mt-2 font-bold" style="font-size: 1em;">
+                                        ({{ soru.puan }} Puan)
                                     </div>
                                     {% endif %}
                                 </div>
@@ -248,7 +306,9 @@
                                 <!-- YAN GÖRSEL -->
                                 {% if soru.gorsel_yolu and soru.gorsel_konum == 'yanda' %}
                                 <div class="flex-shrink-0 w-full sm:w-1/3 ml-0 sm:ml-4 mb-4 sm:mb-0">
-                                    <img src="{{ soru.gorsel_yolu }}" style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;" alt="Soru görseli"
+                                    <img src="{{ soru.gorsel_yolu }}"
+                                        style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;"
+                                        alt="Soru görseli"
                                         class="w-full h-auto rounded-lg border border-slate-200 object-contain print:border-none bg-slate-50">
                                 </div>
                                 {% endif %}
@@ -264,10 +324,7 @@
                             </div>
                         </div>
                         {# Yazdırma için puan gösterimi (Genelde istenmez ama opsiyonel) #}
-                        <div
-                            class="hidden print:block absolute top-0 right-0 text-xs font-bold border border-black px-1 rounded">
-                            {{ soru.puan }}p
-                        </div>
+                        {# Yazdırma için puan gösterimi: İçeriğe taşındı #}
                         {% endif %}
                     </div>
                 </div>
@@ -278,7 +335,7 @@
             {% if ayarlar_imza %}
             <div class="mt-16 pt-8 border-t-2 border-slate-900 page-break-avoid">
                 <div class="text-center">
-                    <p class="font-bold text-slate-900">{{ ayarlar_imza.imza_metni }}</p>
+                    <p class="font-bold text-slate-900">{{ sinav.imza_metni or ayarlar_imza.imza_metni }}</p>
                 </div>
             </div>
             {% endif %}
@@ -303,6 +360,24 @@
         html2pdf().set(opt).from(element).save().then(() => {
             toastGoster('PDF indirildi!', 'success');
         });
+    }
+
+    function sayfaSonuToggle(btn) {
+        const soruBlok = btn.closest('.soru-blok');
+        soruBlok.classList.toggle('sayfa-basi');
+
+        const isPageBreak = soruBlok.classList.contains('sayfa-basi');
+
+        if (isPageBreak) {
+            btn.classList.add('bg-red-600');
+            btn.classList.remove('bg-slate-800');
+            btn.innerHTML = '<i data-lucide="x" class="w-3 h-3"></i> Sayfa Sonunu Kaldır';
+        } else {
+            btn.classList.remove('bg-red-600');
+            btn.classList.add('bg-slate-800');
+            btn.innerHTML = '<i data-lucide="scissors" class="w-3 h-3"></i> Yeni Sayfadan Başlat';
+        }
+        lucide.createIcons();
     }
 
     // İkonları yükle
