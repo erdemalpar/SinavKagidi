@@ -62,6 +62,23 @@
         }
     }
 
+    /* Görsel Seçimi */
+    .img-selected {
+        outline: 3px solid #3b82f6 !important;
+        cursor: grab;
+        opacity: 1;
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+
+    .resizable-img {
+        cursor: pointer;
+        transition: outline 0.1s, box-shadow 0.1s;
+    }
+
+    .resizable-img:hover {
+        outline: 2px dashed #cbd5e1;
+    }
+
     /* Manuel Sayfa Sonu */
     .sayfa-basi {
         break-before: page !important;
@@ -120,15 +137,40 @@
             </div>
         </div>
 
-        <div class="flex gap-3">
+        <div class="flex gap-4 items-center">
+            <!-- Görsel Boyutu Ayarı -->
+            <!-- Görsel Boyutu Ayarı -->
+            <div
+                class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm relative group">
+                <i data-lucide="image" class="w-4 h-4 text-slate-500"></i>
+                <label class="text-xs font-bold text-slate-700 whitespace-nowrap">Görsel Boyutu:</label>
+                <input type="range" id="gorselBoyutSlider" min="10" max="100" value="50" disabled
+                    oninput="gorselBoyutuDegistir(this.value)"
+                    class="w-24 accent-slate-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                <span id="gorselBoyutLabel" class="text-xs font-mono w-8 text-right">-</span>
+
+                <!-- Tooltip -->
+                <div
+                    class="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    Boyutlandırmak için bir görsele tıklayın
+                </div>
+            </div>
+
+            <!-- Sayfa Sınırlarını Göster -->
+            <button onclick="sayfaSinirlariniGoster(this)"
+                class="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors font-medium text-sm">
+                <i data-lucide="scan-line" class="w-4 h-4"></i>
+                <span>Sınırları Göster</span>
+            </button>
+
             <button onclick="window.print()"
-                class="flex items-center gap-2 px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
-                <i data-lucide="printer" class="w-4 h-4"></i>
+                class="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors font-medium">
+                <i data-lucide="printer" class="w-5 h-5"></i>
                 <span>Yazdır</span>
             </button>
             <button onclick="pdfOlustur()"
-                class="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl hover:scale-105">
-                <i data-lucide="download" class="w-4 h-4"></i>
+                class="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 rounded-lg shadow-lg shadow-slate-900/20 transition-all font-medium">
+                <i data-lucide="file-down" class="w-5 h-5"></i>
                 <span>PDF İndir</span>
             </button>
         </div>
@@ -146,7 +188,7 @@
                     <!-- Sol Logo -->
                     <div class="w-[150px] flex-shrink-0 text-left flex justify-start">
                         {% if sinav.logo_sol %}
-                        <img src="{{ sinav.logo_sol }}" alt=""
+                        <img src="{{ sinav.logo_sol }}" alt="" class="resizable-img" data-type="height"
                             style="height: {{ sinav.logo_boyutu }}px; width: auto; max-width: 100%; object-fit: contain;">
                         {% endif %}
                     </div>
@@ -174,7 +216,7 @@
                     <!-- Sağ Logo -->
                     <div class="w-[150px] flex-shrink-0 text-right flex justify-end">
                         {% if sinav.logo_sag %}
-                        <img src="{{ sinav.logo_sag }}" alt=""
+                        <img src="{{ sinav.logo_sag }}" alt="" class="resizable-img" data-type="height"
                             style="height: {{ sinav.logo_boyutu }}px; width: auto; max-width: 100%; object-fit: contain;">
                         {% endif %}
                     </div>
@@ -242,7 +284,8 @@
                                 <img src="{{ soru.gorsel_yolu }}"
                                     style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;"
                                     alt="Soru görseli"
-                                    class="max-w-full h-auto max-h-60 rounded-lg border border-slate-200 object-contain mx-auto print:border-none">
+                                    class="resizable-img max-w-full h-auto max-h-60 rounded-lg border border-slate-200 object-contain mx-auto print:border-none"
+                                    data-type="width">
                             </div>
                             {% endif %}
 
@@ -261,7 +304,8 @@
                                         <img src="{{ soru.gorsel_yolu }}"
                                             style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;"
                                             alt="Soru görseli"
-                                            class="max-w-full h-auto max-h-60 rounded-lg border border-slate-200 object-contain mx-auto print:border-none">
+                                            class="resizable-img max-w-full h-auto max-h-60 rounded-lg border border-slate-200 object-contain mx-auto print:border-none"
+                                            data-type="width">
                                     </div>
                                     {% endif %}
 
@@ -309,7 +353,8 @@
                                     <img src="{{ soru.gorsel_yolu }}"
                                         style="max-height: 240px; width: {{ sinav.gorsel_boyutu }}%; object-fit: contain;"
                                         alt="Soru görseli"
-                                        class="w-full h-auto rounded-lg border border-slate-200 object-contain print:border-none bg-slate-50">
+                                        class="resizable-img w-full h-auto rounded-lg border border-slate-200 object-contain print:border-none bg-slate-50"
+                                        data-type="width">
                                 </div>
                                 {% endif %}
                             </div>
@@ -378,6 +423,145 @@
             btn.innerHTML = '<i data-lucide="scissors" class="w-3 h-3"></i> Yeni Sayfadan Başlat';
         }
         lucide.createIcons();
+    }
+
+    let selectedImage = null;
+
+    // Sayfa yüklendiğinde resizable görselleri ayarla
+    document.addEventListener('DOMContentLoaded', () => {
+        setupResizableImages();
+    });
+
+    // Boşluğa tıklayınca seçimi kaldır
+    document.addEventListener('click', (e) => {
+        // Toolbar'a veya görsele tıklanmadıysa seçimi kaldır
+        if (!e.target.classList.contains('resizable-img') &&
+            !e.target.closest('.group') && // Slider container
+            !e.target.closest('input[type="range"]')) {
+            deselectImage();
+        }
+    });
+
+    function setupResizableImages() {
+        document.querySelectorAll('.resizable-img').forEach(img => {
+            img.onclick = (e) => {
+                e.stopPropagation(); // Tıklama olayının yukarı çıkmasını engelle
+                selectImage(img);
+            };
+        });
+    }
+
+    function selectImage(img) {
+        if (selectedImage) {
+            selectedImage.classList.remove('img-selected');
+        }
+        selectedImage = img;
+        selectedImage.classList.add('img-selected');
+
+        // Slider'ı güncelle ve aktif et
+        const slider = document.getElementById('gorselBoyutSlider');
+        const label = document.getElementById('gorselBoyutLabel');
+        const type = img.dataset.type;
+
+        slider.disabled = false;
+
+        if (type === 'height') { // Logo (px)
+            // Mevcut yüksekliği px olarak al (style öncelikli)
+            let currentHeight = 80;
+            if (img.style.height) {
+                currentHeight = parseInt(img.style.height);
+            } else if (img.height) {
+                currentHeight = img.height;
+            }
+
+            slider.min = 20;
+            slider.max = 300;
+            slider.value = currentHeight;
+            label.innerText = currentHeight + 'px';
+        } else { // Soru Görseli (%)
+            // Mevcut genişliği % olarak al
+            let currentWidth = 100; // Varsayılan
+            if (img.style.width && img.style.width.includes('%')) {
+                currentWidth = parseInt(img.style.width);
+            }
+
+            slider.min = 10;
+            slider.max = 100;
+            slider.value = currentWidth;
+            label.innerText = currentWidth + '%';
+        }
+    }
+
+    function deselectImage() {
+        if (selectedImage) {
+            selectedImage.classList.remove('img-selected');
+            selectedImage = null;
+        }
+
+        // Slider'ı pasif yap
+        const slider = document.getElementById('gorselBoyutSlider');
+        const label = document.getElementById('gorselBoyutLabel');
+
+        slider.disabled = true;
+        label.innerText = '-';
+        slider.value = 50; // Ortaya çek
+    }
+
+    function gorselBoyutuDegistir(val) {
+        if (!selectedImage) {
+            return;
+        }
+
+        const type = selectedImage.dataset.type;
+        const label = document.getElementById('gorselBoyutLabel');
+
+        if (type === 'height') {
+            selectedImage.style.height = val + 'px';
+            label.innerText = val + 'px';
+        } else {
+            selectedImage.style.width = val + '%';
+            label.innerText = val + '%';
+        }
+    }
+
+    function sayfaSinirlariniGoster(btn) {
+        const sinavKagidi = document.getElementById('sinavKagidi');
+        let kilavuzKatmani = document.getElementById('kilavuz-katmani');
+
+        if (!kilavuzKatmani) {
+            // Katmanı oluştur
+            kilavuzKatmani = document.createElement('div');
+            kilavuzKatmani.id = 'kilavuz-katmani';
+            kilavuzKatmani.className = 'absolute top-0 left-0 w-full no-print pointer-events-none z-0';
+            kilavuzKatmani.style.height = '100%';
+
+            // A4 yüksekliği: 297mm
+            // Her sayfa sınırında kırmızı çizgi göster
+            kilavuzKatmani.style.background = `repeating-linear-gradient(
+                to bottom,
+                transparent,
+                transparent calc(297mm - 1px),
+                rgba(255, 0, 0, 0.4) calc(297mm - 1px),
+                rgba(255, 0, 0, 0.4) 297mm
+            )`;
+
+            // Soru kağıdına göre konumlandır
+            if (getComputedStyle(sinavKagidi).position === 'static') {
+                sinavKagidi.style.position = 'relative';
+            }
+            sinavKagidi.appendChild(kilavuzKatmani);
+
+            // Buton stilini güncelle
+            btn.classList.add('bg-slate-100', 'border-slate-400', 'text-slate-900');
+            btn.querySelector('span').innerText = 'Sınırları Gizle';
+        } else {
+            // Katmanı kaldır
+            kilavuzKatmani.remove();
+
+            // Buton stilini güncelle
+            btn.classList.remove('bg-slate-100', 'border-slate-400', 'text-slate-900');
+            btn.querySelector('span').innerText = 'Sınırları Göster';
+        }
     }
 
     // İkonları yükle
