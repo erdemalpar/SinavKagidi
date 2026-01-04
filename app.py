@@ -454,6 +454,17 @@ def sinav_sil(sinav_id):
         db.session.rollback()
         return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
+@app.route('/api/tum-sinavlari-sil', methods=['POST'])
+def tum_sinavlari_sil():
+    """Tüm hazırlanan sınavları sil"""
+    try:
+        SinavKagidi.query.delete()
+        db.session.commit()
+        return jsonify({'basarili': True, 'mesaj': 'Tüm sınavlar başarıyla silindi'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
 @app.route('/ayarlar-kaydet', methods=['POST'])
 def ayarlar_kaydet():
     """Ayarları kaydet"""
