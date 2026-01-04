@@ -13,7 +13,7 @@ app.config['UPLOAD_FOLDER'] = 'static/yuklemeler'
 app.config['MAX_CONTENT_LENGTH'] = 512 * 1024 * 1024  # 512MB max dosya boyutu (Kullanıcı isteği üzerine artırıldı)
 
 # İzin verilen dosya uzantıları
-IZIN_VERILEN_UZANTILAR = {'pdf', 'docx', 'xlsx', 'xls', 'png', 'jpg', 'jpeg'}
+IZIN_VERILEN_UZANTILAR = {'pdf', 'docx', 'xlsx', 'xls', 'png', 'jpg', 'jpeg', 'json'}
 
 # Veritabanı modellerini import et
 from models import db, Soru, SinavAyarlari, SinavKagidi, SinavSorusu, Ayarlar
@@ -39,7 +39,15 @@ def anasayfa():
 def soru_bankasi():
     """Soru bankası sayfası"""
     sorular = Soru.query.order_by(Soru.olusturma_tarihi.desc()).all()
-    return render_template('soru_bankasi.html', sorular=sorular)
+    # Benzersiz konuları al (boş olmayanları)
+    konular = db.session.query(Soru.konu).filter(Soru.konu != None, Soru.konu != '').distinct().all()
+    konular = sorted([k[0] for k in konular])
+    
+    # Benzersiz zorluk seviyelerini al
+    zorluklar = db.session.query(Soru.zorluk).filter(Soru.zorluk != None, Soru.zorluk != '').distinct().all()
+    zorluklar = [z[0] for z in zorluklar]
+    
+    return render_template('soru_bankasi.html', sorular=sorular, konular=konular, zorluklar=zorluklar)
 
 @app.route('/soru-ekle', methods=['POST'])
 def soru_ekle():

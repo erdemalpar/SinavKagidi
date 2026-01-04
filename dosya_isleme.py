@@ -9,6 +9,7 @@ from PyPDF2 import PdfReader
 from docx import Document
 import openpyxl
 from PIL import Image
+import json
 
 
 def akilli_soru_ayikla(metin):
@@ -308,6 +309,71 @@ def excel_isle(dosya_yolu):
     return sorular
 
 
+def json_isle(dosya_yolu):
+    """JSON dosyasından soru çıkarır - Alternatif anahtarları (soru, a, b, cevap vb.) destekler"""
+    try:
+        with open(dosya_yolu, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        def normalize_soru(s):
+            if not isinstance(s, dict):
+                return None
+                
+            # Tuş eşlemeleri (Gelen format -> Veritabanı formatı)
+            mapping = {
+                'soru': 'soru_metni',
+                'a': 'secenek_a',
+                'b': 'secenek_b',
+                'c': 'secenek_c',
+                'd': 'secenek_d',
+                'e': 'secenek_e',
+                'cevap': 'dogru_cevap'
+            }
+            
+            # Yeni bir kopya oluştur ve eşleşmeleri uygula
+            n = s.copy()
+            for eski, yeni in mapping.items():
+                if eski in s and yeni not in s:
+                    n[yeni] = s[eski]
+            
+            # Zorunlu alanların varlığını ve varsayılanları kontrol et
+            if 'soru_metni' not in n or not n['soru_metni']:
+                return None
+                
+            if 'dogru_cevap' not in n or not str(n['dogru_cevap']).strip():
+                n['dogru_cevap'] = 'A' # Varsayılan cevap A
+            else:
+                # Sadece harf kısmını al (Örn: "A)" -> "A")
+                match = re.search(r'([A-E])', str(n['dogru_cevap']).upper())
+                n['dogru_cevap'] = match.group(1) if match else 'A'
+
+            # Diğer varsayılanlar
+            if 'puan' not in n: n['puan'] = 5
+            if 'zorluk' not in n: n['zorluk'] = 'Orta'
+            if 'gorsel_konum' not in n: n['gorsel_konum'] = 'yanda'
+            if 'sik_duzeni' not in n: n['sik_duzeni'] = 'iki_sutun'
+            
+            return n
+
+        if isinstance(data, dict):
+            res = normalize_soru(data)
+            return [res] if res else []
+        elif isinstance(data, list):
+            sorular = []
+            for s in data:
+                normalized = normalize_soru(s)
+                if normalized:
+                    sorular.append(normalized)
+            return sorular
+        else:
+            print("⚠ JSON formatı geçersiz: Liste veya Sözlük bekleniyordu.")
+            return []
+            
+    except Exception as e:
+        print(f"❌ JSON işleme hatası: {e}")
+        return []
+
+
 def gorsel_isle(dosya_yolu, hedef_klasor):
     """Görsel dosyasını yükler ve yeniden boyutlandırır"""
     try:
@@ -345,6 +411,8 @@ def dosya_isle(dosya_yolu, dosya_turu):
         return docx_isle(dosya_yolu)
     elif dosya_turu in ['xlsx', 'xls']:
         return excel_isle(dosya_yolu)
+    elif dosya_turu == 'json':
+        return json_isle(dosya_yolu)
     else:
         print(f"⚠ Desteklenmeyen dosya türü: {dosya_turu}")
         return None

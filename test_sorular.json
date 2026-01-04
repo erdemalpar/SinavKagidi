@@ -1,0 +1,14 @@
+[
+    {
+        "soru_metni": "JSON Test Sorusu 1: Hangisi bir programlama dilidir?",
+        "secenek_a": "HTML",
+        "secenek_b": "CSS",
+        "secenek_c": "Python",
+        "secenek_d": "JSON",
+        "secenek_e": "XML",
+        "dogru_cevap": "C",
+        "konu": "Test",
+        "zorluk": "Kolay",
+        "puan": 10
+    }
+]
