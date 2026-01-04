@@ -17,9 +17,51 @@
 {% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Sol Panel - Soru Bankası -->
-    <div class="lg:col-span-2 space-y-6">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- SOL PANEL: Seçilen Sorular (3 Col) -->
+    <div class="lg:col-span-3 space-y-6 lg:sticky lg:top-4 self-start">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="gradient-warning p-4 text-white">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <i data-lucide="list-checks" class="w-6 h-6"></i>
+                    Seçilen Sorular
+                </h2>
+            </div>
+            <div class="p-4">
+                <div class="grid grid-cols-3 gap-4 mb-4 text-center">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-2xl font-bold text-blue-600" id="toplamSoruSayisi">0</p>
+                        <p class="text-xs text-slate-600">Soru</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg">
+                        <p class="text-2xl font-bold text-green-600" id="toplamPuan">0</p>
+                        <p class="text-xs text-slate-600">Puan</p>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-lg">
+                        <p class="text-2xl font-bold text-purple-600" id="ortalamaPuan">0</p>
+                        <p class="text-xs text-slate-600">Ort.</p>
+                    </div>
+                </div>
+
+                <div id="secilenSorularListe" class="space-y-2 max-h-[70vh] overflow-y-auto">
+                    <div class="text-center py-8 text-slate-400">
+                        <i data-lucide="mouse-pointer-click" class="w-12 h-12 mx-auto mb-2"></i>
+                        <p class="text-sm">Ortadan soru seçin</p>
+                    </div>
+                </div>
+
+                <button onclick="tumSorulariTemizle()"
+                    class="w-full mt-4 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-all">
+                    <i data-lucide="trash-2" class="w-4 h-4 inline mr-2"></i>
+                    Tümünü Temizle
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ORTA PANEL: Soru Bankası (6 Col) -->
+    <div class="lg:col-span-6 space-y-6">
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div class="gradient-primary p-6 text-white">
                 <h1 class="text-2xl font-bold flex items-center gap-3">
@@ -62,7 +104,7 @@
             </div>
 
             <!-- Sorular Listesi -->
-            <div class="p-6 space-y-4 max-h-[600px] overflow-y-auto">
+            <div class="p-6 space-y-4 max-h-[800px] overflow-y-auto">
                 {% if sorular %}
                 {% for soru in sorular %}
                 <div class="soru-kart border-2 border-slate-200 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all"
@@ -108,8 +150,8 @@
         </div>
     </div>
 
-    <!-- Sağ Panel - Seçilen Sorular ve Sınav Ayarları -->
-    <div class="space-y-6" style="zoom: 0.6;">
+    <!-- SAĞ PANEL: Ayarlar ve Butonlar (3 Col) -->
+    <div class="lg:col-span-3 space-y-6 lg:sticky lg:top-4 self-start" style="zoom: 0.7;">
 
         <!-- Sınav Bilgileri -->
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -120,75 +162,8 @@
                 </h2>
             </div>
             <div class="p-4 space-y-4">
-                <!-- Okul Adı -->
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Okul Adı (Kağıtta Görünecek)</label>
-                    <input type="text" id="sinavOkulAdi"
-                        placeholder="{{ ayarlar.okul_adi if ayarlar else 'Okul Adı Giriniz' }}"
-                        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
-                </div>
-
-                <!-- İmza Metni -->
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">İmza Metni</label>
-                    <input type="text" id="sinavImzaMetni"
-                        value="{{ ayarlar.imza_metni if ayarlar else 'Öğr.Gör.Erdem ALPAR' }}"
-                        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Yazı Tipi -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Yazı Tipi</label>
-                        <select id="sinavYaziFontu"
-                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
-                            <option value="font-sans">Arial / Sans Serif</option>
-                            <option value="font-serif">Times New Roman / Serif</option>
-                            <option value="font-mono">Courier / Monospace</option>
-                        </select>
-                    </div>
-
-                    <!-- Yazı Boyutu -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Yazı Boyutu (px)</label>
-                        <input type="number" id="sinavYaziBoyutu" value="8" min="4" max="24"
-                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Yazı Rengi -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Yazı Rengi</label>
-                        <div class="flex items-center gap-2">
-                            <input type="color" id="sinavYaziRengi" value="#000000"
-                                class="h-10 w-full cursor-pointer rounded-lg border-2 border-slate-200 p-1">
-                        </div>
-                    </div>
-
-                    <!-- Yazı Stili -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Yazı Stili</label>
-                        <select id="sinavYaziStili"
-                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
-                            <option value="normal">Normal</option>
-                            <option value="bold">Kalın (Bold)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Resim Boyutu -->
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2 flex justify-between">
-                        <span>Görsel Boyutu (Sorulardaki Resimler)</span>
-                        <span class="text-slate-500" id="gorselBoyutuLabel">%100</span>
-                    </label>
-                    <input type="range" id="sinavGorselBoyutu" min="20" max="100" value="100"
-                        class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                        oninput="document.getElementById('gorselBoyutuLabel').textContent = '%' + this.value">
-                </div>
-                <!-- Antet Logoları -->
-                <div class="border-t border-slate-200 pt-4 mt-4">
+                <!-- 1. Antet Logoları (Kağıdın en üstü) -->
+                <div class="border-b border-slate-200 pb-4">
                     <h3 class="text-sm font-bold text-slate-700 mb-3">Antet Logoları</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <!-- Sol Logo -->
@@ -250,36 +225,67 @@
                     </div>
                 </div>
 
+                <!-- 2. Okul Adı -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Okul Adı (Kağıtta Görünecek)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="sinavOkulAdi"
+                            placeholder="{{ ayarlar.okul_adi if ayarlar else 'Okul Adı Giriniz' }}"
+                            class="flex-1 px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                        <div class="w-24 relative group" title="Yazı Boyutu (px)">
+                            <input type="number" id="sinavOkulAdiBoyutu" value="18" min="12" max="72"
+                                class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all text-center">
+                            <div
+                                class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                                Boyut (px)
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-
-                <!-- Eğitim Yılı ve Dönem -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- 3. Eğitim Yılı ve Dönem -->
+                <div class="grid grid-cols-1 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">Eğitim - Öğretim Yılı</label>
-                        <input type="text" id="sinavEgitimYili" value="{{ ayarlar.egitim_yili }}"
-                            placeholder="Örn: 2025-2026"
-                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                        <div class="flex gap-2">
+                            <input type="text" id="sinavEgitimYili" value="{{ ayarlar.egitim_yili }}"
+                                placeholder="Örn: 2025-2026"
+                                class="flex-1 px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                            <div class="w-20 relative group" title="Yazı Boyutu (px)">
+                                <input type="number" id="sinavEgitimYiliBoyutu" value="16" min="10" max="48"
+                                    class="w-full px-2 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all text-center">
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">Dönem / Yazılı Bilgisi</label>
-                        <input type="text" id="sinavDonem" value="{{ ayarlar.donem }}"
-                            placeholder="Örn: 1. Dönem 1. Yazılı"
-                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                        <div class="flex gap-2">
+                            <input type="text" id="sinavDonem" value="{{ ayarlar.donem }}"
+                                placeholder="Örn: 1. Dönem Final Sınavı"
+                                class="flex-1 px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                            <div class="w-20 relative group" title="Yazı Boyutu (px)">
+                                <input type="number" id="sinavDonemBoyutu" value="14" min="10" max="48"
+                                    class="w-full px-2 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all text-center">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
+                <!-- 4. Sınav Başlığı -->
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Sınav Başlığı</label>
-                    <input type="text" id="sinavBaslik" placeholder="Örn: Matematik 1. Dönem Sınavı"
-                        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Açıklama (Opsiyonel)</label>
-                    <textarea id="sinavAciklama" rows="2" placeholder="Sınav hakkında notlar..."
-                        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none"></textarea>
+                    <div class="flex gap-2">
+                        <input type="text" id="sinavBaslik" placeholder="Örn: Matematik 1. Dönem Sınavı"
+                            class="flex-1 px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none">
+                        <div class="w-24 relative group" title="Yazı Boyutu (px)">
+                            <input type="number" id="sinavBaslikBoyutu" value="10" min="10" max="64"
+                                class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all text-center">
+                        </div>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <!-- 5. Tarih ve Saat -->
+                <div class="grid grid-cols-1 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">Sınav Tarihi</label>
                         <input type="date" id="sinavTarih"
@@ -287,9 +293,109 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">Sınav Saati</label>
-                        <input type="time" id="sinavSaat"
-                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                        <div class="flex items-center gap-2">
+                            <div class="relative w-full">
+                                <input type="time" id="sinavSaatBaslangic"
+                                    class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all text-center">
+                                <div
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <i data-lucide="clock" class="w-4 h-4"></i>
+                                </div>
+                            </div>
+                            <span class="text-slate-400 font-bold">-</span>
+                            <div class="relative w-full">
+                                <input type="time" id="sinavSaatBitis"
+                                    class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all text-center">
+                                <div
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <i data-lucide="clock" class="w-4 h-4"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+
+                <!-- 6. Açıklama -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Açıklama (Opsiyonel)</label>
+                    <textarea id="sinavAciklama" rows="2" placeholder="Sınav hakkında notlar..."
+                        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none"></textarea>
+                </div>
+
+                <!-- 7. İmza Metni -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">İmza Metni</label>
+                    <input type="text" id="sinavImzaMetni"
+                        value="{{ ayarlar.imza_metni if ayarlar else 'Öğr.Gör.Erdem ALPAR' }}"
+                        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                </div>
+
+                <!-- 8. Stil Ayarları -->
+                <div class="border-t border-slate-200 pt-4 mt-2">
+                    <h3 class="text-sm font-bold text-slate-700 mb-3">Kâğıt Stili & Ayarlar</h3>
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        <!-- Yazı Tipi -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Yazı Tipi</label>
+                            <select id="sinavYaziFontu"
+                                class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                                <option value="font-sans">Arial / Sans Serif</option>
+                                <option value="font-serif">Times New Roman / Serif</option>
+                                <option value="font-mono">Courier / Monospace</option>
+                            </select>
+                        </div>
+                        <!-- Yazı Boyutu -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Yazı Boyutu (px)</label>
+                            <input type="number" id="sinavYaziBoyutu" value="8" min="4" max="24"
+                                class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        <!-- Yazı Rengi -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Yazı Rengi</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="sinavYaziRengi" value="#000000"
+                                    class="h-10 w-full cursor-pointer rounded-lg border-2 border-slate-200 p-1">
+                            </div>
+                        </div>
+                        <!-- Yazı Stili -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Yazı Stili</label>
+                            <select id="sinavYaziStili"
+                                class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                                <option value="normal">Normal</option>
+                                <option value="bold">Kalın (Bold)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Resim Boyutu -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2 flex justify-between">
+                            <span>Görsel Boyutu (Sorulardaki Resimler)</span>
+                            <span class="text-slate-500" id="gorselBoyutuLabel">%100</span>
+                        </label>
+                        <input type="range" id="sinavGorselBoyutu" min="20" max="100" value="100"
+                            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                            oninput="document.getElementById('gorselBoyutuLabel').textContent = '%' + this.value">
+                    </div>
+                    <!-- Puan Kutusu Boyutu -->
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-slate-700 mb-2 flex justify-between">
+                            <span>Puan Kutusu Boyutu</span>
+                            <span class="text-slate-500" id="puanKutusuBoyutuLabel">%{{ eski_sinav.puan_kutusu_boyutu if
+                                eski_sinav else '40' }}</span>
+                        </label>
+                        <input type="range" id="sinavPuanKutusuBoyutu" min="10" max="150"
+                            value="{{ eski_sinav.puan_kutusu_boyutu if eski_sinav else '40' }}"
+                            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                            oninput="document.getElementById('puanKutusuBoyutuLabel').textContent = '%' + this.value">
+                    </div>
+                    <input type="hidden" id="sinavSikBoslugu"
+                        value="{{ eski_sinav.sik_boslugu if eski_sinav else '16' }}">
+                    <input type="hidden" id="sinavSikBoslugu"
+                        value="{{ eski_sinav.sik_boslugu if eski_sinav else '16' }}">
                 </div>
             </div>
         </div>
@@ -313,65 +419,6 @@
             </button>
         </div>
 
-
-        <!-- Görünüm Ayarları -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mt-6">
-            <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 text-white">
-                <h2 class="text-xl font-bold flex items-center gap-2">
-                    <i data-lucide="palette" class="w-6 h-6"></i>
-                    Görünüm Ayarları
-                </h2>
-            </div>
-            <div class="p-4 space-y-4">
-
-
-
-
-
-                <div>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Seçilen Sorular -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div class="gradient-warning p-4 text-white">
-                <h2 class="text-xl font-bold flex items-center gap-2">
-                    <i data-lucide="list-checks" class="w-6 h-6"></i>
-                    Seçilen Sorular
-                </h2>
-            </div>
-            <div class="p-4">
-                <div class="grid grid-cols-3 gap-4 mb-4 text-center">
-                    <div class="bg-blue-50 p-3 rounded-lg">
-                        <p class="text-2xl font-bold text-blue-600" id="toplamSoruSayisi">0</p>
-                        <p class="text-xs text-slate-600">Soru</p>
-                    </div>
-                    <div class="bg-green-50 p-3 rounded-lg">
-                        <p class="text-2xl font-bold text-green-600" id="toplamPuan">0</p>
-                        <p class="text-xs text-slate-600">Puan</p>
-                    </div>
-                    <div class="bg-purple-50 p-3 rounded-lg">
-                        <p class="text-2xl font-bold text-purple-600" id="ortalamaPuan">0</p>
-                        <p class="text-xs text-slate-600">Ort.</p>
-                    </div>
-                </div>
-
-                <div id="secilenSorularListe" class="space-y-2 max-h-64 overflow-y-auto">
-                    <div class="text-center py-8 text-slate-400">
-                        <i data-lucide="mouse-pointer-click" class="w-12 h-12 mx-auto mb-2"></i>
-                        <p class="text-sm">Soldan soru seçin</p>
-                    </div>
-                </div>
-
-                <button onclick="tumSorulariTemizle()"
-                    class="w-full mt-4 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-all">
-                    <i data-lucide="trash-2" class="w-4 h-4 inline mr-2"></i>
-                    Tümünü Temizle
-                </button>
-            </div>
-        </div>
 
 
     </div>
@@ -404,7 +451,7 @@
             liste.innerHTML = `
                 <div class="text-center py-8 text-slate-400">
                     <i data-lucide="mouse-pointer-click" class="w-12 h-12 mx-auto mb-2"></i>
-                    <p class="text-sm">Soldan soru seçin</p>
+                    <p class="text-sm">Ortadan soru seçin</p>
                 </div>
             `;
             lucide.createIcons();
@@ -494,14 +541,27 @@
             egitim_yili: document.getElementById('sinavEgitimYili').value,
             donem: document.getElementById('sinavDonem').value,
             tarih: document.getElementById('sinavTarih').value,
-            saat: document.getElementById('sinavSaat').value,
+            tarih: document.getElementById('sinavTarih').value,
+            saat: (document.getElementById('sinavSaatBaslangic').value && document.getElementById('sinavSaatBitis').value)
+                ? (document.getElementById('sinavSaatBaslangic').value + ' - ' + document.getElementById('sinavSaatBitis').value)
+                : (document.getElementById('sinavSaatBaslangic').value || document.getElementById('sinavSaatBitis').value || ''),
             okul_adi: document.getElementById('sinavOkulAdi').value,
+            okul_adi: document.getElementById('sinavOkulAdi').value,
+            okul_adi_boyutu: document.getElementById('sinavOkulAdiBoyutu').value,
+            egitim_yili_boyutu: document.getElementById('sinavEgitimYiliBoyutu').value,
+            donem_boyutu: document.getElementById('sinavDonemBoyutu').value,
+            baslik_boyutu: document.getElementById('sinavBaslikBoyutu').value,
             imza_metni: document.getElementById('sinavImzaMetni').value,
             yazi_fontu: document.getElementById('sinavYaziFontu').value,
             yazi_boyutu: document.getElementById('sinavYaziBoyutu').value,
             yazi_rengi: document.getElementById('sinavYaziRengi').value,
             yazi_stili: document.getElementById('sinavYaziStili').value,
             gorsel_boyutu: document.getElementById('sinavGorselBoyutu').value,
+            yazi_stili: document.getElementById('sinavYaziStili').value,
+            gorsel_boyutu: document.getElementById('sinavGorselBoyutu').value,
+            gorsel_boyutu: document.getElementById('sinavGorselBoyutu').value,
+            puan_kutusu_boyutu: document.getElementById('sinavPuanKutusuBoyutu').value,
+            sik_boslugu: document.getElementById('sinavSikBoslugu').value,
             logo_sol: document.getElementById('sinavLogoSol').value,
             logo_sag: document.getElementById('sinavLogoSag').value,
             logo_boyutu: document.getElementById('sinavLogoBoyutu').value,
@@ -535,9 +595,20 @@
         await sinavKaydet();
     }
 
-    function yeniSinav() {
+    async function yeniSinav() {
         if (secilenSorular.size > 0) {
-            if (confirm('Mevcut seçimleri kaybedeceksiniz. Devam etmek istiyor musunuz?')) {
+            const result = await Swal.fire({
+                title: 'Yeni Sınav Oluşturulsun mu?',
+                text: "Mevcut seçimleriniz (seçilen sorular vb.) kaybolacaktır. Yeni bir sayfa açmak istediğinize emin misiniz?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Evet, Sıfırla',
+                cancelButtonText: 'Vazgeç'
+            });
+
+            if (result.isConfirmed) {
                 location.reload();
             }
         } else {
@@ -661,8 +732,21 @@
         document.getElementById('sinavEgitimYili').value = "{{ eski_sinav.egitim_yili or '' }}";
         document.getElementById('sinavDonem').value = "{{ eski_sinav.donem or '' }}";
         document.getElementById('sinavTarih').value = "{{ eski_sinav.tarih or '' }}";
-        document.getElementById('sinavSaat').value = "{{ eski_sinav.saat or '' }}";
+
+        const saatVal = "{{ eski_sinav.saat or '' }}";
+        if (saatVal.includes(' - ')) {
+            const parts = saatVal.split(' - ');
+            document.getElementById('sinavSaatBaslangic').value = parts[0];
+            document.getElementById('sinavSaatBitis').value = parts[1];
+        } else {
+            document.getElementById('sinavSaatBaslangic').value = saatVal;
+        }
+
         document.getElementById('sinavOkulAdi').value = "{{ eski_sinav.okul_adi or '' }}";
+        document.getElementById('sinavOkulAdiBoyutu').value = "{{ eski_sinav.okul_adi_boyutu or 24 }}";
+        document.getElementById('sinavEgitimYiliBoyutu').value = "{{ eski_sinav.egitim_yili_boyutu or 18 }}";
+        document.getElementById('sinavDonemBoyutu').value = "{{ eski_sinav.donem_boyutu or 16 }}";
+        document.getElementById('sinavBaslikBoyutu').value = "{{ eski_sinav.baslik_boyutu or 16 }}";
         document.getElementById('sinavImzaMetni').value = "{{ eski_sinav.imza_metni or '' }}";
 
         // Görünüm Ayarları

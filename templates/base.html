@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sınav Kağıdı Hazırlama{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -116,6 +118,7 @@
                 <span class="font-medium">Sınav Hazırla</span>
             </a>
 
+
             <a href="/ayarlar"
                 class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-all">
                 <i data-lucide="settings" class="w-5 h-5"></i>
@@ -130,9 +133,11 @@
     </aside>
 
     <!-- Hamburger Menü Butonu -->
+    <!-- Hamburger Menü Butonu -->
     <button id="menuToggle"
-        class="fixed top-4 left-4 z-50 bg-white p-3 rounded-lg shadow-lg hover:bg-gray-50 transition-all">
-        <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
+        class="fixed top-4 z-50 bg-white p-2 rounded-r-lg shadow-md hover:bg-gray-50 transition-all border-y border-r border-slate-200"
+        style="left: 16rem;">
+        <i data-lucide="chevron-left" class="w-5 h-5 text-gray-700"></i>
     </button>
 
     <!-- Main Content -->
@@ -333,7 +338,7 @@
                 throw error;
             }
         }
-        
+
         // Sidebar Toggle
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('sidebar');
@@ -343,17 +348,21 @@
         if (menuToggle && sidebar && mainContent) {
             menuToggle.addEventListener('click', () => {
                 sidebarAcik = !sidebarAcik;
-                
+                const icon = menuToggle.querySelector('i');
+
                 if (sidebarAcik) {
                     sidebar.style.transform = 'translateX(0)';
                     mainContent.style.marginLeft = '16rem'; // ml-64
-                    menuToggle.style.left = '17rem'; // butonu da kaydır
+                    menuToggle.style.left = '16rem'; // Panele bitişik
+                    icon.setAttribute('data-lucide', 'chevron-left');
                 } else {
                     sidebar.style.transform = 'translateX(-100%)';
                     mainContent.style.marginLeft = '0';
-                    menuToggle.style.left = '1rem';
+                    menuToggle.style.left = '0'; // Ekranın sol kenarı
+                    icon.setAttribute('data-lucide', 'chevron-right');
                 }
-                
+
+                lucide.createIcons();
                 logger.bilgi('Sidebar durumu değişti', { acik: sidebarAcik });
             });
         }
@@ -361,7 +370,7 @@
         // Aktif sayfa işaretle
         const sidebarLinks = document.querySelectorAll('.sidebar-link');
         const currentPath = window.location.pathname;
-        
+
         sidebarLinks.forEach(link => {
             if (link.getAttribute('href') === currentPath) {
                 link.classList.add('bg-indigo-50', 'text-indigo-600');
@@ -373,7 +382,7 @@
             sayfa: currentPath,
             zaman: new Date().toLocaleString('tr-TR')
         });
-    
+
     </script>
 
     {% block extra_scripts %}{% endblock %}

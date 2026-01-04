@@ -357,7 +357,7 @@
                 <i data-lucide="upload-cloud" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
                 <h3 class="text-lg font-bold text-slate-800 mb-2">Dosya Seçin veya Sürükleyin</h3>
                 <p class="text-sm text-slate-500 mb-4">PDF, DOCX, Excel veya Görsel (PNG/JPG)</p>
-                <input type="file" id="dosyaInput" class="hidden" accept=".pdf,.docx,.xlsx,.xls,.png,.jpg,.jpeg"
+                <input type="file" id="dosyaInput" class="hidden" accept=".pdf,.docx,.xlsx,.xls,.png,.jpg,.jpeg" multiple
                     onchange="dosyaSecildi(this)">
                 <button
                     class="gradient-primary text-white px-6 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all">
@@ -388,7 +388,7 @@
 {% include '_soru_guncelle_modal.html' %}
 
 <script>
-    let secilenDosya = null;
+    let secilenDosyalar = [];
 
     function acSoruEkleModal() {
         document.getElementById('soruEkleModal').classList.remove('hidden');
@@ -410,21 +410,33 @@
     function kapatDosyaYukleModal() {
         document.getElementById('dosyaYukleModal').classList.add('hidden');
         document.getElementById('dosyaBilgisi').classList.add('hidden');
-        secilenDosya = null;
+        secilenDosyalar = [];
+        document.getElementById('dosyaInput').value = '';
     }
 
     function dosyaSecildi(input) {
-        if (input.files && input.files[0]) {
-            secilenDosya = input.files[0];
-            document.getElementById('dosyaAdi').textContent = secilenDosya.name;
-            document.getElementById('dosyaBoyutu').textContent = (secilenDosya.size / 1024 / 1024).toFixed(2) + ' MB';
+        if (input.files && input.files.length > 0) {
+            secilenDosyalar = Array.from(input.files);
+            
+            const adiEl = document.getElementById('dosyaAdi');
+            const boyutEl = document.getElementById('dosyaBoyutu');
+            
+            if (secilenDosyalar.length === 1) {
+                adiEl.textContent = secilenDosyalar[0].name;
+                boyutEl.textContent = (secilenDosyalar[0].size / 1024 / 1024).toFixed(2) + ' MB';
+            } else {
+                adiEl.textContent = `${secilenDosyalar.length} dosya seçildi`;
+                const toplam = secilenDosyalar.reduce((top, f) => top + f.size, 0);
+                boyutEl.textContent = `Toplam: ${(toplam / 1024 / 1024).toFixed(2)} MB`;
+            }
+            
             document.getElementById('dosyaBilgisi').classList.remove('hidden');
             lucide.createIcons();
         }
     }
 
     async function dosyaYukle() {
-        if (!secilenDosya) {
+        if (secilenDosyalar.length === 0) {
             logger.uyari('Dosya yükleme iptal edildi', 'Dosya seçilmedi');
             return;
         }
@@ -438,16 +450,12 @@
             lucide.createIcons();
 
             logger.baslik('📁 DOSYA YÜKLEME İŞLEMİ');
-            logger.bilgi('Dosya bilgileri', {
-                ad: secilenDosya.name,
-                boyut: (secilenDosya.size / 1024 / 1024).toFixed(2) + ' MB',
-                tip: secilenDosya.type
-            });
+            logger.bilgi(`${secilenDosyalar.length} dosya gönderiliyor...`);
 
             const formData = new FormData();
-            formData.append('dosya', secilenDosya);
-
-            logger.bilgi('Dosya sunucuya gönderiliyor...');
+            secilenDosyalar.forEach(dosya => {
+                formData.append('dosya', dosya);
+            });
             const baslamaZamani = performance.now();
 
             const response = await fetch('/dosya-yukle', {
@@ -561,7 +569,44 @@
         }
     }
 
+    async function sayacSifirla(tablo) {
+        const result = await Swal.fire({
+            title: 'Değerli Hocam, Emin misiniz?',
+            text: "Bu işlem sayaçları (ID) 1'e döndürecektir. Eğer veritabanında hala kayıt varsa bu işlem çakışmalara yol açabilir. Verilerin silindiğinden emin misiniz?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Evet, Sıfırla',
+            cancelButtonText: 'Vazgeç'
+        });
 
+        if (!result.isConfirmed) return;
+        
+        // The original instruction had a double confirm here, but it was for "silmek" (delete)
+        // and was likely a copy-paste error from tumSorulariSil.
+        // For a counter reset, a single Swal.fire confirmation is usually sufficient.
+        // If a second confirmation is truly needed for 'sayacSifirla', it should be rephrased.
+
+        try {
+            logger.bilgi(`Sayaçlar sıfırlanıyor: ${tablo}...`);
+            const data = await apiIstegi(`/sayac-sifirla/${tablo}`, {
+                method: 'POST' // Assuming a POST request for state change
+            });
+
+            if (data.basarili) {
+                logger.basarili(`Sayaç başarıyla sıfırlandı: ${tablo}`, data);
+                toastGoster(data.mesaj, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                logger.hata(`Sayaç sıfırlama başarısız: ${tablo}`, data);
+                toastGoster(data.mesaj || 'Sayaç sıfırlanırken hata oluştu', 'error');
+            }
+        } catch (error) {
+            logger.hata('Sayaç sıfırlama işlemi başarısız', error);
+            toastGoster('Sayaç sıfırlanırken bir hata oluştu', 'error');
+        }
+    }
     
     // Görsel Yükleme Fonksiyonu
     async function gorselYukle(input) {

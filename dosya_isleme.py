@@ -185,10 +185,11 @@ def docx_isle(dosya_yolu):
         
         # Farklı soru ayırma pattern'lerini dene
         patterns = [
-            (r'\n\s*(?:S|Soru)\s*(\d+)[:.)\s]+', 'S1. / Soru 1:'),
-            (r'\n\s*(\d+)[.)]\s+', '1. / 1)'),
-            (r'\n\s*Question\s*(\d+)[:.)\s]+', 'Question 1:'),
-            (r'\n\s*S(\d+)\s*[:\.]', 'S1:'),
+            (r'\n\s*(?:S|Soru|Question|K\.)\s*(\d+)[\.\)\:\-\s]+', 'Soru 1: / S.1'),
+            (r'\n\s*(\d+)[\.\)\:\-]\s+', '1. / 1) / 1- / 1:'), 
+            (r'\n\s*(\d+)\.\s*Soru', '1. Soru'),
+            # Eğer numaralandırma yoksa (Word otomatik liste), paragraf başlarını vs. algılamak zor.
+            # Şimdilik numaralandırmaya güveniyoruz.
         ]
         
         soru_bloklari = None
@@ -253,15 +254,29 @@ def excel_isle(dosya_yolu):
         sheet = workbook.active
         
         # İlk satırı kontrol et - başlık mı?
+        # İlk satırı kontrol et - başlık mı?
         baslangic_satir = 1
-        ilk_satir_degerler = [sheet.cell(1, col).value for col in range(1, 8)]
+        ilk_hucre = str(sheet.cell(1, 1).value or '').strip()
+        ilk_satir_liste = [str(sheet.cell(1, col).value or '').lower() for col in range(1, 8)]
         
-        # Eğer ilk satırda "soru", "şık", "cevap" gibi kelimeler varsa başlık
-        baslик_kelimeler = ['soru', 'şık', 'seçenek', 'cevap', 'doğru', 'option', 'answer']
-        if any(any(kelime in str(deger).lower() for kelime in baslик_kelimeler) 
-               for deger in ilk_satir_degerler if deger):
+        # Başlık tespiti kriterleri
+        baslik_var_mi = False
+        kesin_basliklar = ['soru metni', 'soru içeriği', 'soru kökü', 'question text', 'seçenek a', 'option a', 'doğru cevap', 'answer', 'puan']
+        
+        # Eğer ilk hücre metni 50 karakterden kısaysa başlık olma ihtimali var
+        if len(ilk_hucre) < 50:
+            # Kesin başlık ifadeleri var mı?
+            if any(kb in ' '.join(ilk_satir_liste) for kb in kesin_basliklar):
+                baslik_var_mi = True
+            # Tam eşleşmeler (Riskli kelimeler için)
+            elif ilk_hucre.lower() in ['soru', 'no', 'sıra', 'id']:
+                baslik_var_mi = True
+                
+        if baslik_var_mi:
             baslangic_satir = 2
             print("✓ Excel başlık satırı tespit edildi")
+        else:
+            print("ℹ Excel ilk satır veri olarak işleniyor (Başlık bulunamadı veya soru metni)")
         
         for satir in range(baslangic_satir, sheet.max_row + 1):
             soru_metni = sheet.cell(satir, 1).value

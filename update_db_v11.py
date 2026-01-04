@@ -15,9 +15,9 @@ def migrate():
         cursor.execute("PRAGMA table_info(sinav_kagitlari)")
         columns = [info[1] for info in cursor.fetchall()]
         
-        if 'puan_kutusu_boyutu' not in columns:
-            print("Adding 'puan_kutusu_boyutu' column...")
-            cursor.execute("ALTER TABLE sinav_kagitlari ADD COLUMN puan_kutusu_boyutu INTEGER DEFAULT 100")
+        if 'siklar_yatay_bosluk' not in columns:
+            print("Adding 'siklar_yatay_bosluk' column...")
+            cursor.execute("ALTER TABLE sinav_kagitlari ADD COLUMN siklar_yatay_bosluk INTEGER DEFAULT 24")
             print("Column added.")
         else:
             print("Column already exists.")

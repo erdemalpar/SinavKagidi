@@ -93,9 +93,13 @@ class SinavKagidi(db.Model):
     donem = db.Column(db.String(100))
     aciklama = db.Column(db.Text)
     tarih = db.Column(db.String(50))
-    saat = db.Column(db.String(10)) # Sınav saati
+    saat = db.Column(db.String(50)) # Sınav saati (Örn: 09:30 - 11:00)
     # Görünüm Ayarları
     okul_adi = db.Column(db.String(200))
+    okul_adi_boyutu = db.Column(db.Integer, default=24)
+    egitim_yili_boyutu = db.Column(db.Integer, default=18)
+    donem_boyutu = db.Column(db.Integer, default=16)
+    baslik_boyutu = db.Column(db.Integer, default=16)
     yazi_fontu = db.Column(db.String(100), default='font-sans')
     yazi_boyutu = db.Column(db.Integer, default=12)
     yazi_rengi = db.Column(db.String(20), default='#000000')
@@ -104,6 +108,11 @@ class SinavKagidi(db.Model):
     logo_sol = db.Column(db.String(500))
     logo_sag = db.Column(db.String(500))
     logo_boyutu = db.Column(db.Integer, default=80) # Pixel olarak
+    puan_kutusu_boyutu = db.Column(db.Integer, default=40) # Yüzde olarak (Score Box Size)
+    sik_boslugu = db.Column(db.Integer, default=16) # Pixel olarak (Spacing between question and options)
+    siklar_arasi_bosluk = db.Column(db.Integer, default=8) # Pixel olarak (Vertical Spacing between options)
+    siklar_yatay_bosluk = db.Column(db.Integer, default=24) # Pixel olarak (Horizontal Spacing between options)
+    baslik_katsayisi = db.Column(db.Integer, default=100) # Header Scale Factor (%)
     imza_metni = db.Column(db.String(200), default='Öğr.Gör.Erdem ALPAR')
     
     olusturma_tarihi = db.Column(db.DateTime, default=datetime.utcnow)

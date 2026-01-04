@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Geliştirme Tarihçesi (Tarifler){% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Başlık -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Geliştirme Tarihçesi (Tarifler)</h1>
+        <p class="text-gray-600">Projeye verilen promptlar ve teknik uygulamaların kaydı.</p>
+    </div>
+
+    <!-- Akordiyon Listesi -->
+    <div class="space-y-4">
+
+        <!-- Madde 1: Sayaç Sıfırlama -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <details class="group">
+                <summary
+                    class="flex items-center justify-between p-4 cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-purple-100 text-purple-600 rounded-lg">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Sayaçları Sıfırlama Özelliği</h3>
+                            <p class="text-xs text-slate-500">Son Eklenen Özellik</p>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-down"
+                        class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="p-4 border-t border-slate-200 bg-white">
+                    <div class="mb-4">
+                        <h4 class="text-sm font-bold text-slate-900 mb-1">Kullanıcı Promptu:</h4>
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-700 font-mono">
+                            "Ayarlar sayfasına projede tutulan tüm sayaçları sıfırlama özelliği ekle. Herbir sayacı
+                            sıfırlama özelliği olsun ve bir de tüm sayaçları sıfırlama özelliği olsun."
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-indigo-900 mb-1">Teknik Uygulama (AI Yorumu):</h4>
+                        <ul class="list-disc list-inside text-sm text-slate-600 space-y-1">
+                            <li><strong>Backend (Flask):</strong> <code>/api/sayac-sifirla</code> endpoint'i
+                                oluşturuldu. SQLite veritabanındaki <code>sqlite_sequence</code> tablosuna
+                                <code>DELETE</code> sorgusu gönderilerek sayaçlar (Auto Increment ID) sıfırlandı.</li>
+                            <li><strong>Frontend (Ayarlar):</strong> Ayarlar sayfasına "Sayaç İşlemleri" bölümü eklendi.
+                            </li>
+                            <li><strong>Güvenlik:</strong> İşlem öncesi kullanıcı onayı (confirm) eklendi ve işlem
+                                sonrası detaylı geri bildirim (Toast) sağlandı.</li>
+                        </ul>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Madde 2: Sidebar Düzenlemesi -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <details class="group">
+                <summary
+                    class="flex items-center justify-between p-4 cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                            <i data-lucide="panel-left" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Sidebar Buton Konumu ve İkonu</h3>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-down"
+                        class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="p-4 border-t border-slate-200 bg-white">
+                    <div class="mb-4">
+                        <h4 class="text-sm font-bold text-slate-900 mb-1">Kullanıcı Promptu:</h4>
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-700 font-mono">
+                            "Paneli açıp kapatma butonu ilk açıldığında yanlış yerde geliyor... butonu %30 küçült...
+                            açıldığında sola, kapandığında sağa ok olsun."
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-indigo-900 mb-1">Teknik Uygulama:</h4>
+                        <ul class="list-disc list-inside text-sm text-slate-600 space-y-1">
+                            <li><strong>CSS:</strong> Buton boyutu <code>p-3</code>'ten <code>p-2</code>'ye düşürüldü.
+                                <code>left: 16rem</code> ile sidebar'a bitişik konuma sabitlendi.</li>
+                            <li><strong>JS Mantığı:</strong> Sidebar durumuna göre butonun <code>left</code> pozisyonu
+                                (0 veya 16rem) ve içindeki ikon (<code>chevron-left</code> / <code>chevron-right</code>)
+                                dinamik olarak değiştirildi.</li>
+                            <li><strong>Görsel:</strong> Butona <code>rounded-r-lg</code> verilerek sidebar ile
+                                bütünleşik görünüm sağlandı.</li>
+                        </ul>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Madde 3: Font Boyutları -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <details class="group">
+                <summary
+                    class="flex items-center justify-between p-4 cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-green-100 text-green-600 rounded-lg">
+                            <i data-lucide="type" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Başlık ve Eğitim Yılı Font Boyutları</h3>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-down"
+                        class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="p-4 border-t border-slate-200 bg-white">
+                    <div class="mb-4">
+                        <h4 class="text-sm font-bold text-slate-900 mb-1">Kullanıcı Promptu:</h4>
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-700 font-mono">
+                            "Bunların da boyutunu ayarlayabileyim (Eğitim yılı, Dönem, Başlık)"
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-indigo-900 mb-1">Teknik Uygulama:</h4>
+                        <ul class="list-disc list-inside text-sm text-slate-600 space-y-1">
+                            <li><strong>Veritabanı:</strong> <code>SinavKagidi</code> modeline
+                                <code>egitim_yili_boyutu</code>, <code>donem_boyutu</code> ve <code>baslik_boyutu</code>
+                                sütunları eklendi.</li>
+                            <li><strong>UI:</strong> Sınav Hazırlama sayfasında ilgili inputların yanına px cinsinden
+                                boyut giriş kutucukları eklendi.</li>
+                            <li><strong>Önizleme:</strong> Girilen değerlerin anlık veya kayıt sonrası çıktıda
+                                <code>style="font-size: ...px"</code> ile uygulanması sağlandı.</li>
+                        </ul>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Madde 4: Panel Düzeni -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <details class="group">
+                <summary
+                    class="flex items-center justify-between p-4 cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-orange-100 text-orange-600 rounded-lg">
+                            <i data-lucide="layout-template" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Sınav Bilgileri Panel Düzeni</h3>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-down"
+                        class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="p-4 border-t border-slate-200 bg-white">
+                    <div class="mb-4">
+                        <h4 class="text-sm font-bold text-slate-900 mb-1">Kullanıcı Promptu:</h4>
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-700 font-mono">
+                            "Burası birbirine girdi. CSS olarak düzelt." (Sidebar'daki inputların sıkışması üzerine)
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-indigo-900 mb-1">Teknik Uygulama:</h4>
+                        <ul class="list-disc list-inside text-sm text-slate-600 space-y-1">
+                            <li><strong>Flex/Grid Düzenlemesi:</strong> Sidebar gibi dar alanlarda
+                                <code>grid-cols-2</code> kullanımından vazgeçilerek <code>grid-cols-1</code>'e dönüldü.
+                            </li>
+                            <li><strong>Hiyerarşi:</strong> Antet bilgileri (Logo -> Okul Adı -> Tarih -> Başlık) kağıt
+                                üzerindeki görsel sıraya göre yeniden sıralandı.</li>
+                        </ul>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

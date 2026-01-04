@@ -87,7 +87,7 @@
         padding-top: 0 !important;
         border-top: none !important;
     }
-    }
+
 
     /* Ekran Görüntüsü Ayarları */
     .sayfa-basi-gosterge {
@@ -137,43 +137,94 @@
             </div>
         </div>
 
-        <div class="flex gap-4 items-center">
-            <!-- Görsel Boyutu Ayarı -->
+        <div class="flex flex-wrap gap-2 items-center justify-end flex-1">
             <!-- Görsel Boyutu Ayarı -->
             <div
-                class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm relative group">
-                <i data-lucide="image" class="w-4 h-4 text-slate-500"></i>
-                <label class="text-xs font-bold text-slate-700 whitespace-nowrap">Görsel Boyutu:</label>
-                <input type="range" id="gorselBoyutSlider" min="10" max="150" value="50" disabled
+                class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded-lg border border-slate-200 shadow-sm relative group">
+                <i data-lucide="image" class="w-3.5 h-3.5 text-slate-500"></i>
+                <label class="text-[10px] font-bold text-slate-700 whitespace-nowrap">Görsel:</label>
+                <input type="range" id="gorselBoyutSlider" min="0" max="150" value="50" disabled
                     oninput="gorselBoyutuDegistir(this.value)"
-                    class="w-24 accent-slate-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                <span id="gorselBoyutLabel" class="text-xs font-mono w-8 text-right">-</span>
+                    class="w-16 accent-slate-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
 
-                <!-- Tooltip -->
                 <div
                     class="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                     Boyutlandırmak için bir görsele tıklayın
                 </div>
             </div>
 
-            <!-- Dikey Boşluk Ayarı -->
-            <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
-                <i data-lucide="chevrons-up-down" class="w-4 h-4 text-slate-500"></i>
-                <label class="text-xs font-bold text-slate-700 whitespace-nowrap">Boşluk:</label>
-                <input type="range" id="dikeyBoslukSlider" min="0" max="100" value="50"
-                    oninput="dikeyBoslukDegistir(this.value)" class="w-24 accent-slate-900 cursor-pointer">
+            <!-- Başlık Boyutu Ayarı -->
+            <div
+                class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded-lg border border-slate-200 shadow-sm relative group">
+                <i data-lucide="heading" class="w-3.5 h-3.5 text-slate-500"></i>
+                <label class="text-[10px] font-bold text-slate-700 whitespace-nowrap">Başlık:</label>
+                <input type="range" id="baslikBoyutuSlider" min="50" max="150" step="5"
+                    value="{{ sinav.baslik_katsayisi|default(100) }}" oninput="baslikBoyutuDegistir(this.value)"
+                    class="w-16 accent-slate-900 cursor-pointer">
+                <span id="baslikBoyutuLabel" class="text-[10px] font-mono w-7 text-right">%{{
+                    sinav.baslik_katsayisi|default(100) }}</span>
+            </div>
+
+
+
+            <!-- Puan Kutusu Ayarı (Kaldırıldı) -->
+
+            <!-- Şık Boşluğu Ayarı -->
+            <div
+                class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded-lg border border-slate-200 shadow-sm relative group">
+                <i data-lucide="align-vertical-space-around" class="w-3.5 h-3.5 text-slate-500"></i>
+                <label class="text-[10px] font-bold text-slate-700 whitespace-nowrap">Şık:</label>
+                <input type="range" id="sikBosluguSlider" min="-14" max="50" step="-10"
+                    value="{{ sinav.sik_boslugu|default(16) }}" oninput="sikBosluguDegistir(this.value)"
+                    class="w-16 accent-slate-900 cursor-pointer">
+                <span id="sikBosluguLabel" class="text-[10px] font-mono w-6 text-right">{{ sinav.sik_boslugu|default(16)
+                    }}px</span>
+            </div>
+
+            <!-- Şık İçi Boşluğu Ayarı -->
+            <div
+                class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded-lg border border-slate-200 shadow-sm relative group">
+                <i data-lucide="list-spacing" class="w-3.5 h-3.5 text-slate-500"></i>
+                <label class="text-[10px] font-bold text-slate-700 whitespace-nowrap">Şık-İçi:</label>
+                <input type="range" id="siklarArasiSlider" min="-10" max="30" step="1"
+                    value="{{ sinav.siklar_arasi_bosluk|default(8) }}" oninput="siklarArasiDegistir(this.value)"
+                    class="w-16 accent-slate-900 cursor-pointer">
+                <span id="siklarArasiLabel" class="text-[10px] font-mono w-6 text-right">{{
+                    sinav.siklar_arasi_bosluk|default(8) }}px</span>
+            </div>
+
+            <!-- Şık-Yatay Boşluk Ayarı -->
+            <div
+                class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded-lg border border-slate-200 shadow-sm relative group">
+                <i data-lucide="columns" class="w-3.5 h-3.5 text-slate-500"></i>
+                <label class="text-[10px] font-bold text-slate-700 whitespace-nowrap">Şık-Yan:</label>
+                <input type="range" id="siklarYataySlider" min="-10" max="100" step="4"
+                    value="{{ sinav.siklar_yatay_bosluk|default(24) }}" oninput="siklarYatayDegistir(this.value)"
+                    class="w-16 accent-slate-900 cursor-pointer">
+                <span id="siklarYatayLabel" class="text-[10px] font-mono w-7 text-right">{{
+                    sinav.siklar_yatay_bosluk|default(24) }}px</span>
+            </div>
+
+            <!-- Soru Boşluğu Ayarı -->
+            <div
+                class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded-lg border border-slate-200 shadow-sm relative group">
+                <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 text-slate-500"></i>
+                <label class="text-[10px] font-bold text-slate-700 whitespace-nowrap">Ara:</label>
+                <input type="range" id="soruBoslukSlider" min="0" max="200" value="50"
+                    oninput="soruBoslukDegistir(this.value)" class="w-16 accent-slate-900 cursor-pointer">
+                <span id="soruBoslukLabel" class="text-[10px] font-mono w-6 text-right">50px</span>
             </div>
 
             <!-- Sayfa Sınırlarını Göster -->
             <button onclick="sayfaSinirlariniGoster(this)"
-                class="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors font-medium text-sm">
-                <i data-lucide="scan-line" class="w-4 h-4"></i>
-                <span>Sınırları Göster</span>
+                class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors font-medium text-[11px] whitespace-nowrap">
+                <i data-lucide="scan-line" class="w-3.5 h-3.5"></i>
+                <span>Sınır</span>
             </button>
 
             <button onclick="window.print()"
-                class="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors font-medium">
-                <i data-lucide="printer" class="w-5 h-5"></i>
+                class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors font-medium text-[11px] whitespace-nowrap">
+                <i data-lucide="printer" class="w-4 h-4"></i>
                 <span>Yazdır</span>
             </button>
             <button onclick="pdfOlustur()"
@@ -203,19 +254,28 @@
 
                     <!-- Orta Metin -->
                     <div class="flex-1 text-center">
-                        <h1 class="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase leading-tight">{{
+                        <h1 class="baslik-metin text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase leading-tight"
+                            data-base-size="{{ sinav.okul_adi_boyutu or 24 }}"
+                            style="font-size: {{ (sinav.okul_adi_boyutu or 24) * (sinav.baslik_katsayisi|default(100))/100 }}px;">
+                            {{
                             sinav.okul_adi or ayarlar.okul_adi or "" }}</h1>
 
-                        <h2 class="text-lg font-bold text-slate-700 mb-0.5 leading-snug uppercase">
+                        <h2 class="baslik-metin text-lg font-bold text-slate-700 mb-0.5 leading-snug uppercase"
+                            data-base-size="{{ sinav.egitim_yili_boyutu or 18 }}"
+                            style="font-size: {{ (sinav.egitim_yili_boyutu or 18) * (sinav.baslik_katsayisi|default(100))/100 }}px;">
                             {{ sinav.egitim_yili or ayarlar.egitim_yili }} Eğitim Öğretim Yılı
                         </h2>
 
-                        <h3 class="text-base font-bold text-slate-700 mb-0.5 leading-snug uppercase">
+                        <h3 class="baslik-metin text-base font-bold text-slate-700 mb-0.5 leading-snug uppercase"
+                            data-base-size="{{ sinav.donem_boyutu or 16 }}"
+                            style="font-size: {{ (sinav.donem_boyutu or 16) * (sinav.baslik_katsayisi|default(100))/100 }}px;">
                             {{ sinav.donem or ayarlar.donem }}
                         </h3>
 
                         {% if sinav.baslik %}
-                        <h4 class="text-base font-bold text-slate-700 leading-snug">
+                        <h4 class="baslik-metin text-base font-bold text-slate-700 leading-snug"
+                            data-base-size="{{ sinav.baslik_boyutu or 16 }}"
+                            style="font-size: {{ (sinav.baslik_boyutu or 16) * (sinav.baslik_katsayisi|default(100))/100 }}px;">
                             {{ sinav.baslik }}
                         </h4>
                         {% endif %}
@@ -231,19 +291,13 @@
                 </div>
 
                 <!-- Öğrenci Bilgi Alanı -->
-                <div class="mt-8 grid grid-cols-2 gap-x-12 gap-y-4 text-left text-sm font-medium">
+                <div class="baslik-metin mt-8 grid grid-cols-2 gap-x-12 gap-y-4 text-left font-medium"
+                    data-base-size="14" style="font-size: {{ 14 * (sinav.baslik_katsayisi|default(100))/100 }}px;">
                     <div class="flex items-end gap-2">
                         <span class="font-bold text-slate-900 min-w-[80px]">Adı Soyadı:</span>
                         <div class="flex-1 border-b border-black border-dotted h-4"></div>
                     </div>
-                    <div class="flex items-end gap-2">
-                        <span class="font-bold text-slate-900 min-w-[60px]">Sınıfı:</span>
-                        <div class="flex-1 border-b border-black border-dotted h-4"></div>
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <span class="font-bold text-slate-900 min-w-[80px]">Numarası:</span>
-                        <div class="flex-1 border-b border-black border-dotted h-4"></div>
-                    </div>
+
                     <div class="flex items-end gap-2">
                         <span class="font-bold text-slate-900 min-w-[60px]">Tarih:</span>
                         <span class="flex-1 border-b border-black border-dotted h-4 pb-0.5 pl-2 font-normal">{{
@@ -255,7 +309,7 @@
             </header>
 
             <!-- Sorular -->
-            <div class="space-y-8">
+            <div class="space-y-8" id="sorularContainer">
                 {% for sinav_sorusu in sinav.sorular %}
                 {% set soru = sinav_sorusu.soru %}
 
@@ -323,14 +377,15 @@
                                     soru.secenek_e %}
 
                                     <!-- Şık Düzeni Sınıfları -->
-                                    {% set sik_class = 'space-y-2' %} {# Varsayılan: Alt alta #}
+                                    {% set sik_class = 'flex flex-col gap-y-2' %} {# Varsayılan: Alt alta (Flex Gap) #}
                                     {% if soru.sik_duzeni == 'yan_yana' %}
                                     {% set sik_class = 'flex flex-wrap gap-x-6 gap-y-2' %}
                                     {% elif soru.sik_duzeni == 'iki_sutun' %}
                                     {% set sik_class = 'grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2' %}
                                     {% endif %}
 
-                                    <div class="siklar-container mt-4 {{ sik_class }} ml-1">
+                                    <div class="siklar-container {{ sik_class }} ml-1"
+                                        style="margin-top: {{ sinav.sik_boslugu|default(16) }}px; row-gap: {{ sinav.siklar_arasi_bosluk|default(8) }}px; column-gap: {{ sinav.siklar_yatay_bosluk|default(24) }}px;">
                                         {% for sik_harfi in ['A', 'B', 'C', 'D', 'E'] %}
                                         {% set sik_attr = 'secenek_' + sik_harfi|lower %}
                                         {% if soru[sik_attr] %}
@@ -361,7 +416,8 @@
 
                                     {# Yazdırma için Puan (Sorunun sonunda) #}
                                     {% if ayarlar.puan_goster %}
-                                    <div class="hidden print:block text-right mt-2 font-bold" style="font-size: 1em;">
+                                    <div class="hidden print:block text-right mt-2 font-bold"
+                                        style="font-size: {{ (sinav.puan_kutusu_boyutu|default(100))/100 }}em;">
                                         ({{ soru.puan }} Puan)
                                     </div>
                                     {% endif %}
@@ -382,8 +438,10 @@
                         </div>
 
                         <!-- Puan (Sağda Sabit) -->
+                        <!-- Puan (Sağda Sabit) -->
                         {% if ayarlar.puan_goster %}
-                        <div class="flex-shrink-0 ml-2 pt-1 no-print">
+                        <div class="flex-shrink-0 ml-2 pt-1 no-print"
+                            style="transform: scale({{ (sinav.puan_kutusu_boyutu|default(100))/100 }}); transform-origin: top right;">
                             <div class="text-center border border-slate-300 rounded px-2 py-0.5 bg-slate-50">
                                 <div class="text-[10px] text-slate-400 font-bold uppercase">Puan</div>
                                 <div class="text-base font-bold text-slate-700 leading-none">{{ soru.puan }}</div>
@@ -549,6 +607,67 @@
         }
     }
 
+    function dikeyBoslukDegistir(val) {
+        // Soru metni ile şıklar arasındaki boşluğu ayarla
+        // Varsayılan (50 için) yaklaşık 12px (0.75rem)
+        // Aralığı 0px ile 50px arasına yayalım. 50 -> 25px olsun.
+        const metinMargin = val * 0.8;
+
+        document.querySelectorAll('.soru-metni').forEach(el => {
+            el.style.marginBottom = metinMargin + 'px';
+        });
+
+        // Şıklar arasındaki boşluğu ayarla
+        // Şıklar flex veya grid olabilir, gap veya margin ile kontrol edilebilir
+        // .siklar-container gap-y-2 (0.5rem = 8px) kullanıyor. 
+        // Bunu inline style ile override edelim.
+
+        /* 
+           Not: Tailwind gap sınıflarını style="gap: ...px" ile ezebiliriz 
+           ancak grid/flex yapısına dikkat etmeliyiz.
+        */
+        const gap = val * 0.4; // 0px - 40px arası
+        document.querySelectorAll('.siklar-container').forEach(el => {
+            // gap-y ve gap-x var, biz sadece dikey boşluğu (row-gap) etkilemek istiyoruz
+            // style.rowGap grid ve flex-wrap için çalışır
+            el.style.rowGap = gap + 'px';
+
+            // Eğer flex-col kullanıyorsa (yan_yana olmayanlar) space-y-2 kullanıyor olabilir
+            // space-y-2 margin-top ekler.
+            if (el.classList.contains('space-y-2')) {
+                // space-y utility'si child elemanlara margin-top ekler.
+                // Bunu JS ile kontrol etmek zor olabilir, bu yüzden space-y-2 classını kaldırıp
+                // yerine flex flex-col gap-y-X yapısına çevirmek daha temiz olurdu ama
+                // HTML'i değiştirmeden children'lara margin verebiliriz.
+                const children = el.children;
+                for (let i = 1; i < children.length; i++) {
+                    children[i].style.marginTop = gap + 'px';
+                }
+                // space-y-2'nin css etkisini yok saymak için !important gerekebilir veya style daha baskındır.
+            }
+        });
+
+        // Şık düzeni 'grid' veya 'flex-wrap' olanlar için gap row-gap ile çalışır
+        // 'space-y' olanlar için (varsayılan) üstteki margin loop'u çalışır.
+    }
+
+    function soruBoslukDegistir(val) {
+        // space-y-8 (2rem = 32px) varsayılan
+        // Slider 20-200 arası. 
+        // Space-y mantığı: Child elemanlara (ilk hariç) margin-top ekler.
+        const container = document.getElementById('sorularContainer');
+        if (!container) return;
+
+        // space-y-8 class'ını kaldır ki bizim inline style'ımız (margin-top) çakışmasın veya üzerine yazsın.
+        // Aslında inline style class'ı ezer, yani kaldırmaya gerek yok ama temizlik için:
+        container.classList.remove('space-y-8');
+
+        const sorular = container.children;
+        for (let i = 1; i < sorular.length; i++) {
+            sorular[i].style.marginTop = val + 'px';
+        }
+    }
+
     function sayfaSinirlariniGoster(btn) {
         const sinavKagidi = document.getElementById('sinavKagidi');
         let kilavuzKatmani = document.getElementById('kilavuz-katmani');
@@ -591,5 +710,91 @@
 
     // İkonları yükle
     setTimeout(() => lucide.createIcons(), 100);
+
+    // AYAR KAYDETME VE CANLI ÖNİZLEME
+    let ayarGuncelleTimeout;
+
+    function ayarKaydet(key, value) {
+        clearTimeout(ayarGuncelleTimeout);
+        ayarGuncelleTimeout = setTimeout(async () => {
+            try {
+                const payload = {};
+                payload[key] = parseInt(value);
+
+                await fetch('/api/sinav-ayar-guncelle/{{ sinav.id }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                console.log('Ayar kaydedildi:', key, value);
+            } catch (err) {
+                console.error('Ayar kaydedilemedi:', err);
+            }
+        }, 500);
+    }
+
+    function puanKutusuDegistir(val) {
+        document.getElementById('puanKutusuLabel').textContent = '%' + val;
+
+        // Ekran (Box)
+        const scoreBoxes = document.querySelectorAll('.flex-shrink-0.ml-2.pt-1.no-print');
+        scoreBoxes.forEach(box => {
+            box.style.transform = `scale(${val / 100})`;
+        });
+
+        // Baskı (Text)
+        const printScores = document.querySelectorAll('.hidden.print\\:block.text-right.mt-2.font-bold');
+        printScores.forEach(el => {
+            el.style.fontSize = (val / 100) + 'em';
+        });
+
+        ayarKaydet('puan_kutusu_boyutu', val);
+    }
+
+    function sikBosluguDegistir(val) {
+        document.getElementById('sikBosluguLabel').textContent = val + 'px';
+
+        const containers = document.querySelectorAll('.siklar-container');
+        containers.forEach(el => {
+            el.style.marginTop = val + 'px';
+        });
+
+        ayarKaydet('sik_boslugu', val);
+    }
+
+    function siklarArasiDegistir(val) {
+        document.getElementById('siklarArasiLabel').textContent = val + 'px';
+
+        const containers = document.querySelectorAll('.siklar-container');
+        containers.forEach(el => {
+            el.style.rowGap = val + 'px';
+        });
+
+        ayarKaydet('siklar_arasi_bosluk', val);
+    }
+
+    function baslikBoyutuDegistir(val) {
+        document.getElementById('baslikBoyutuLabel').textContent = '%' + val;
+
+        document.querySelectorAll('.baslik-metin').forEach(el => {
+            const base = parseFloat(el.getAttribute('data-base-size'));
+            if (base) {
+                el.style.fontSize = (base * val / 100) + 'px';
+            }
+        });
+
+        ayarKaydet('baslik_katsayisi', val);
+    }
+
+    function siklarYatayDegistir(val) {
+        document.getElementById('siklarYatayLabel').textContent = val + 'px';
+
+        const containers = document.querySelectorAll('.siklar-container');
+        containers.forEach(el => {
+            el.style.columnGap = val + 'px';
+        });
+
+        ayarKaydet('siklar_yatay_bosluk', val);
+    }
 </script>
 {% endblock %}

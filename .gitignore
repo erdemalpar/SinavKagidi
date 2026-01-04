@@ -12,3 +12,5 @@ venv/
 static/uploads/*
 !static/uploads/.gitkeep
 .venv/
+static/yuklemeler/*
+!static/yuklemeler/.gitkeep
