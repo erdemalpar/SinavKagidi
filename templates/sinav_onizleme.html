@@ -434,8 +434,9 @@
                                         {% endif %}
 
                                         <!-- Şıklar -->
-                                        {% if soru.secenek_a or soru.secenek_b or soru.secenek_c or soru.secenek_d or
-                                        soru.secenek_e %}
+                                        {% if (soru.soru_tipi == 'test' or not soru.soru_tipi) and (soru.secenek_a or
+                                        soru.secenek_b or soru.secenek_c or soru.secenek_d or
+                                        soru.secenek_e) %}
 
                                         <!-- Şık Düzeni Sınıfları -->
                                         {% set sik_class = 'flex flex-col gap-y-2' %} {# Varsayılan: Alt alta (Flex Gap)

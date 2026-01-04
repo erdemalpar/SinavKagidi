@@ -21,6 +21,7 @@ class Soru(db.Model):
     gorsel_yolu = db.Column(db.String(500))  # Soru görseli varsa
     gorsel_konum = db.Column(db.String(20), default='arada')  # ustte, arada, yanda
     sik_duzeni = db.Column(db.String(20), default='alt_alta')  # alt_alta, yan_yana
+    soru_tipi = db.Column(db.String(20), default='test')  # test, klasik
     olusturma_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
     guncelleme_tarihi = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -47,6 +48,7 @@ class Soru(db.Model):
             'gorsel_yolu': self.gorsel_yolu,
             'gorsel_konum': self.gorsel_konum,
             'sik_duzeni': self.sik_duzeni,
+            'soru_tipi': self.soru_tipi,
             'olusturma_tarihi': self.olusturma_tarihi.isoformat() if self.olusturma_tarihi else None
         }
 

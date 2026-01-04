@@ -39,7 +39,7 @@
                     </div>
 
                     <!-- Şıklar -->
-                    <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                    <div id="guncelleSiklarArea" class="bg-slate-50 rounded-xl p-5 border border-slate-200">
                         <label class="block text-sm font-bold text-slate-800 mb-4 border-b pb-2">Şıklar ve Cevap</label>
 
                         <div class="space-y-3">
@@ -185,6 +185,18 @@
                             Diğer Ayarlar
                         </div>
                         <div class="p-4 space-y-4">
+                            <!-- Soru Tipi -->
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Soru
+                                    Tipi</label>
+                                <select id="guncelleSoruTipi"
+                                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 font-medium"
+                                    onchange="guncelleSoruTipiDegisti()">
+                                    <option value="test">🔘 Çoktan Seçmeli (Test)</option>
+                                    <option value="klasik">📝 Klasik / Açık Uçlu</option>
+                                </select>
+                            </div>
+
                             <!-- Şık Düzeni -->
                             <div>
                                 <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Şık

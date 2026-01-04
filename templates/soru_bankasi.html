@@ -199,7 +199,7 @@
                     </div>
 
                     <!-- Şıklar -->
-                    <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                    <div id="ekleSiklarArea" class="bg-slate-50 rounded-xl p-5 border border-slate-200">
                         <label class="block text-sm font-bold text-slate-800 mb-4 border-b pb-2">Şıklar ve Cevap</label>
                         <div class="space-y-3">
 
@@ -328,6 +328,17 @@
                             <i data-lucide="settings" class="w-4 h-4 text-blue-600"></i> Ayarlar
                         </div>
                         <div class="p-4 space-y-4">
+                            <!-- Soru Tipi -->
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Soru
+                                    Tipi</label>
+                                <select id="ekleSoruTipi"
+                                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                                    onchange="ekleSoruTipiDegisti()">
+                                    <option value="test">🔘 Çoktan Seçmeli (Test)</option>
+                                    <option value="klasik">📝 Klasik / Açık Uçlu</option>
+                                </select>
+                            </div>
                             <!-- Şık Düzeni -->
                             <div>
                                 <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Şık
@@ -566,9 +577,10 @@
             secenek_d: document.getElementById('secenekD').value,
             secenek_e: document.getElementById('secenekE').value,
             dogru_cevap: document.getElementById('dogruCevap').value,
-            konu: document.getElementById('konu').value,
-            zorluk: document.getElementById('zorluk').value,
-            puan: parseInt(document.getElementById('puan').value)
+            konu: document.getElementById('ekleKonu').value,
+            zorluk: document.getElementById('ekleZorluk').value,
+            puan: parseInt(document.getElementById('eklePuan').value),
+            soru_tipi: document.getElementById('ekleSoruTipi').value
         };
 
         logger.baslik('➕ YENİ SORU EKLEME');
@@ -746,6 +758,10 @@
                 // Yeni Alanlar
                 document.getElementById('guncelleGorselKonum').value = soru.gorsel_konum || 'arada';
                 document.getElementById('guncelleSikDuzeni').value = soru.sik_duzeni || 'alt_alta';
+                document.getElementById('guncelleSoruTipi').value = soru.soru_tipi || 'test';
+
+                // Soru tipine göre UI'ı ayarla
+                guncelleSoruTipiDegisti();
 
                 // Görsel alanı
                 if (soru.gorsel_yolu) {
@@ -789,7 +805,8 @@
             puan: parseInt(document.getElementById('guncellePuan').value),
             gorsel_yolu: document.getElementById('guncelleGorselYolu').value,
             gorsel_konum: document.getElementById('guncelleGorselKonum').value,
-            sik_duzeni: document.getElementById('guncelleSikDuzeni').value
+            sik_duzeni: document.getElementById('guncelleSikDuzeni').value,
+            soru_tipi: document.getElementById('guncelleSoruTipi').value
         };
 
         try {
@@ -850,7 +867,10 @@
         if (gorselKonum === 'ustte' && imgTag) mainContent += `<div class="text-center mb-4">${imgTag}</div>`;
         mainContent += `<div class="text-[16px] text-slate-900 leading-relaxed font-medium mb-3 text-justify whitespace-pre-line">${soruMetni || 'Soru metni...'}</div>`;
         if ((gorselKonum === 'arada' || !gorselKonum) && imgTag) mainContent += `<div class="text-center my-4">${imgTag}</div>`;
-        if (Object.keys(siklar).length > 0) {
+
+        const soruTipi = document.getElementById(prefix + 'SoruTipi')?.value || 'test';
+
+        if (soruTipi === 'test' && Object.keys(siklar).length > 0) {
             let sikClass = 'space-y-2';
             if (sikDuzeni === 'yan_yana') sikClass = 'flex flex-wrap gap-x-6 gap-y-2';
             else if (sikDuzeni === 'iki_sutun') sikClass = 'grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2';
@@ -869,7 +889,7 @@
 
     function setupLivePreview(sourceType) {
         const prefix = sourceType === 'ekle' ? 'ekle' : 'guncelle';
-        const inputs = ['SoruMetni', 'GorselKonum', 'SikDuzeni', 'SecenekA', 'SecenekB', 'SecenekC', 'SecenekD', 'SecenekE'];
+        const inputs = ['SoruMetni', 'GorselKonum', 'SikDuzeni', 'SoruTipi', 'SecenekA', 'SecenekB', 'SecenekC', 'SecenekD', 'SecenekE'];
         inputs.forEach(id => {
             const el = document.getElementById(prefix + id);
             if (el) {
@@ -877,6 +897,36 @@
                 el.addEventListener('change', () => onizlemeGuncelle(sourceType));
             }
         });
+    }
+
+    function guncelleSoruTipiDegisti() {
+        const tip = document.getElementById('guncelleSoruTipi').value;
+        const siklarArea = document.getElementById('guncelleSiklarArea');
+        const sikDuzeniArea = document.getElementById('guncelleSikDuzeni').closest('div');
+
+        if (tip === 'klasik') {
+            siklarArea.classList.add('hidden');
+            if (sikDuzeniArea) sikDuzeniArea.classList.add('opacity-50', 'pointer-events-none');
+        } else {
+            siklarArea.classList.remove('hidden');
+            if (sikDuzeniArea) sikDuzeniArea.classList.remove('opacity-50', 'pointer-events-none');
+        }
+        onizlemeGuncelle('guncelle');
+    }
+
+    function ekleSoruTipiDegisti() {
+        const tip = document.getElementById('ekleSoruTipi').value;
+        const siklarArea = document.getElementById('ekleSiklarArea');
+        const sikDuzeniArea = document.getElementById('ekleSikDuzeni').closest('div');
+
+        if (tip === 'klasik') {
+            siklarArea.classList.add('hidden');
+            if (sikDuzeniArea) sikDuzeniArea.classList.add('opacity-50', 'pointer-events-none');
+        } else {
+            siklarArea.classList.remove('hidden');
+            if (sikDuzeniArea) sikDuzeniArea.classList.remove('opacity-50', 'pointer-events-none');
+        }
+        onizlemeGuncelle('ekle');
     }
 
     setTimeout(() => {

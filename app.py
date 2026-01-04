@@ -67,7 +67,8 @@ def soru_ekle():
             puan=data.get('puan', 5),
             gorsel_yolu=data.get('gorsel_yolu'),
             gorsel_konum=data.get('gorsel_konum', 'yanda'),
-            sik_duzeni=data.get('sik_duzeni', 'iki_sutun')
+            sik_duzeni=data.get('sik_duzeni', 'iki_sutun'),
+            soru_tipi=data.get('soru_tipi', 'test')
         )
         # Mükerrer Kayıt Kontrolü
         mevcut = Soru.query.filter_by(soru_metni=data.get('soru_metni')).first()
@@ -436,7 +437,22 @@ def ayarlar():
     except Exception as e:
         print(f"Dosya listeleme hatası: {e}")
 
-    return render_template('ayarlar.html', ayarlar=ayarlar, istatistik=istatistik, dosyalar=dosyalar_listesi)
+    # Hazırlanan Sınavları Çek
+    sinavlar = SinavKagidi.query.order_by(SinavKagidi.olusturma_tarihi.desc()).all()
+
+    return render_template('ayarlar.html', ayarlar=ayarlar, istatistik=istatistik, dosyalar=dosyalar_listesi, sinavlar=sinavlar)
+
+@app.route('/sinav-sil/<int:sinav_id>', methods=['DELETE'])
+def sinav_sil(sinav_id):
+    """Sınav sil"""
+    try:
+        sinav = SinavKagidi.query.get_or_404(sinav_id)
+        db.session.delete(sinav)
+        db.session.commit()
+        return jsonify({'basarili': True, 'mesaj': 'Sınav başarıyla silindi'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
 @app.route('/ayarlar-kaydet', methods=['POST'])
 def ayarlar_kaydet():
@@ -527,6 +543,7 @@ def soru_guncelle(soru_id):
         soru.gorsel_yolu = data.get('gorsel_yolu', soru.gorsel_yolu)
         soru.gorsel_konum = data.get('gorsel_konum', soru.gorsel_konum)
         soru.sik_duzeni = data.get('sik_duzeni', soru.sik_duzeni)
+        soru.soru_tipi = data.get('soru_tipi', soru.soru_tipi)
         
         db.session.commit()
         return jsonify({'basarili': True, 'mesaj': 'Soru güncellendi'})
