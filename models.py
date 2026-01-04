@@ -112,6 +112,8 @@ class SinavKagidi(db.Model):
     sik_boslugu = db.Column(db.Integer, default=16) # Pixel olarak (Spacing between question and options)
     siklar_arasi_bosluk = db.Column(db.Integer, default=8) # Pixel olarak (Vertical Spacing between options)
     siklar_yatay_bosluk = db.Column(db.Integer, default=24) # Pixel olarak (Horizontal Spacing between options)
+    ust_bosluk = db.Column(db.Integer, default=40) # Pixel olarak (Top Margin)
+    alt_bosluk = db.Column(db.Integer, default=40) # Pixel olarak (Bottom Margin)
     baslik_katsayisi = db.Column(db.Integer, default=100) # Header Scale Factor (%)
     imza_metni = db.Column(db.String(200), default='Öğr.Gör.Erdem ALPAR')
     

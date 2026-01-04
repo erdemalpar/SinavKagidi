@@ -2,6 +2,8 @@
 
 Modern ve kullanıcı dostu bir web uygulaması ile profesyonel sınav kağıtları oluşturun!
 
+[![Canlı Demo](https://img.shields.io/badge/Canlı_Demo-Görüntüle-2ea44f?style=for-the-badge&logo=github)](https://erdemalpar.github.io/SinavKagidi)
+
 ## 🚀 Özellikler
 
 ### ✅ Tamamlanan Özellikler (v1.0)

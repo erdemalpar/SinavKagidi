@@ -19,7 +19,6 @@
         /* Tüm gereksiz elementleri gizle */
         nav,
         aside,
-        header,
         footer,
         .no-print,
         #sidebar,
@@ -39,15 +38,14 @@
         .sinav-kagidi {
             box-shadow: none !important;
             margin: 0 !important;
-            padding: 0 !important;
             width: 100% !important;
             max-width: 210mm !important;
             /* A4 Genişliği */
         }
 
         .a4-sayfa {
-            padding: 2.5cm 2cm 2cm 2cm !important;
-            /* Standart kenar boşlukları */
+            padding: 0 2cm 0 2cm !important;
+            /* Yalnızca yan boşluklar sabit */
             width: 100% !important;
             margin: 0 !important;
             min-height: auto !important;
@@ -111,7 +109,7 @@
     }
 
     .a4-sayfa {
-        padding: 2.5cm 2cm 2cm 2cm;
+        padding: 0 2cm 0 2cm;
         height: 100%;
         position: relative;
     }
@@ -215,6 +213,30 @@
                 <span id="soruBoslukLabel" class="text-[10px] font-mono w-6 text-right">50px</span>
             </div>
 
+            <!-- Üst Boşluk -->
+            <div
+                class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded-lg border border-slate-200 shadow-sm relative group">
+                <i data-lucide="align-vertical-justify-start" class="w-3.5 h-3.5 text-slate-500"></i>
+                <label class="text-[10px] font-bold text-slate-700 whitespace-nowrap">Üst:</label>
+                <input type="range" id="ustBoslukSlider" min="-0" max="200" step="5"
+                    value="{{ sinav.ust_bosluk|default(40) }}" oninput="ustBoslukDegistir(this.value)"
+                    class="w-16 accent-slate-900 cursor-pointer">
+                <span id="ustBoslukLabel" class="text-[10px] font-mono w-7 text-right">{{ sinav.ust_bosluk|default(40)
+                    }}px</span>
+            </div>
+
+            <!-- Alt Boşluk -->
+            <div
+                class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded-lg border border-slate-200 shadow-sm relative group">
+                <i data-lucide="align-vertical-justify-end" class="w-3.5 h-3.5 text-slate-500"></i>
+                <label class="text-[10px] font-bold text-slate-700 whitespace-nowrap">Alt:</label>
+                <input type="range" id="altBoslukSlider" min="0" max="200" step="5"
+                    value="{{ sinav.alt_bosluk|default(40) }}" oninput="altBoslukDegistir(this.value)"
+                    class="w-16 accent-slate-900 cursor-pointer">
+                <span id="altBoslukLabel" class="text-[10px] font-mono w-7 text-right">{{ sinav.alt_bosluk|default(40)
+                    }}px</span>
+            </div>
+
             <!-- Sayfa Sınırlarını Göster -->
             <button onclick="sayfaSinirlariniGoster(this)"
                 class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors font-medium text-[11px] whitespace-nowrap">
@@ -237,7 +259,8 @@
 
     <!-- Sınav Kağıdı -->
     <div id="sinavKagidi" style="font-family: {{ sinav.yazi_fontu or " inherit" }}; font-size: {{ sinav.yazi_boyutu or
-        12 }}px; color: {{ sinav.yazi_rengi or "#000000" }}; font-weight: {{ sinav.yazi_stili or "normal" }};"
+        12 }}px; color: {{ sinav.yazi_rengi or "#000000" }}; font-weight: {{ sinav.yazi_stili or "normal" }};
+        padding-top: {{ sinav.ust_bosluk|default(40) }}px; padding-bottom: {{ sinav.alt_bosluk|default(40) }}px;"
         class="sinav-kagidi">
         <div class="a4-sayfa">
 
@@ -795,6 +818,17 @@
         });
 
         ayarKaydet('siklar_yatay_bosluk', val);
+    }
+    function ustBoslukDegistir(val) {
+        document.getElementById('ustBoslukLabel').textContent = val + 'px';
+        document.getElementById('sinavKagidi').style.paddingTop = val + 'px';
+        ayarKaydet('ust_bosluk', val);
+    }
+
+    function altBoslukDegistir(val) {
+        document.getElementById('altBoslukLabel').textContent = val + 'px';
+        document.getElementById('sinavKagidi').style.paddingBottom = val + 'px';
+        ayarKaydet('alt_bosluk', val);
     }
 </script>
 {% endblock %}

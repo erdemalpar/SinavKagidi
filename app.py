@@ -313,6 +313,8 @@ def sinav_kaydet():
             sik_boslugu=data.get('sik_boslugu', 16),
             siklar_arasi_bosluk=data.get('siklar_arasi_bosluk', 8),
             siklar_yatay_bosluk=data.get('siklar_yatay_bosluk', 24),
+            ust_bosluk=data.get('ust_bosluk', 40),
+            alt_bosluk=data.get('alt_bosluk', 40),
             baslik_katsayisi=data.get('baslik_katsayisi', 100)
         )
         db.session.add(yeni_sinav)
@@ -351,6 +353,11 @@ def sinav_ayar_guncelle(sinav_id):
             sinav.baslik_katsayisi = data['baslik_katsayisi']
         if 'siklar_yatay_bosluk' in data:
             sinav.siklar_yatay_bosluk = data['siklar_yatay_bosluk']
+            
+        if 'ust_bosluk' in data:
+            sinav.ust_bosluk = data['ust_bosluk']
+        if 'alt_bosluk' in data:
+            sinav.alt_bosluk = data['alt_bosluk']
             
         db.session.commit()
         return jsonify({'basarili': True})
