@@ -110,83 +110,13 @@
 
     <!-- Sağ Panel - Seçilen Sorular ve Sınav Ayarları -->
     <div class="space-y-6" style="zoom: 0.6;">
-        <!-- Eylem Butonları -->
-        <div class="bg-white rounded-2xl shadow-lg p-4 space-y-3">
-            <button onclick="sinavKaydet()"
-                class="w-full gradient-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                <i data-lucide="save" class="w-5 h-5 inline mr-2"></i>
-                Sınavı Kaydet
-            </button>
-            <button onclick="sinavOnizle()"
-                class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                <i data-lucide="eye" class="w-5 h-5 inline mr-2"></i>
-                Önizle & PDF
-            </button>
-            <button onclick="yeniSinav()"
-                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-medium transition-all">
-                <i data-lucide="refresh-cw" class="w-5 h-5 inline mr-2"></i>
-                Yeni Sınav
-            </button>
-        </div>
+
         <!-- Sınav Bilgileri -->
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div class="gradient-success p-4 text-white">
                 <h2 class="text-xl font-bold flex items-center gap-2">
                     <i data-lucide="file-text" class="w-6 h-6"></i>
                     Sınav Bilgileri
-                </h2>
-            </div>
-            <div class="p-4 space-y-4">
-
-                <!-- Eğitim Yılı ve Dönem -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Eğitim - Öğretim Yılı</label>
-                        <input type="text" id="sinavEgitimYili" value="{{ ayarlar.egitim_yili }}"
-                            placeholder="Örn: 2025-2026"
-                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Dönem / Yazılı Bilgisi</label>
-                        <input type="text" id="sinavDonem" value="{{ ayarlar.donem }}"
-                            placeholder="Örn: 1. Dönem 1. Yazılı"
-                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Sınav Başlığı</label>
-                    <input type="text" id="sinavBaslik" placeholder="Örn: Matematik 1. Dönem Sınavı"
-                        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Açıklama (Opsiyonel)</label>
-                    <textarea id="sinavAciklama" rows="2" placeholder="Sınav hakkında notlar..."
-                        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none"></textarea>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Sınav Tarihi</label>
-                        <input type="date" id="sinavTarih"
-                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Sınav Saati</label>
-                        <input type="time" id="sinavSaat"
-                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Görünüm Ayarları -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mt-6">
-            <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 text-white">
-                <h2 class="text-xl font-bold flex items-center gap-2">
-                    <i data-lucide="palette" class="w-6 h-6"></i>
-                    Görünüm Ayarları
                 </h2>
             </div>
             <div class="p-4 space-y-4">
@@ -320,7 +250,82 @@
                     </div>
                 </div>
 
-                <!-- Antet Logoları -->
+
+
+                <!-- Eğitim Yılı ve Dönem -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Eğitim - Öğretim Yılı</label>
+                        <input type="text" id="sinavEgitimYili" value="{{ ayarlar.egitim_yili }}"
+                            placeholder="Örn: 2025-2026"
+                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Dönem / Yazılı Bilgisi</label>
+                        <input type="text" id="sinavDonem" value="{{ ayarlar.donem }}"
+                            placeholder="Örn: 1. Dönem 1. Yazılı"
+                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Sınav Başlığı</label>
+                    <input type="text" id="sinavBaslik" placeholder="Örn: Matematik 1. Dönem Sınavı"
+                        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Açıklama (Opsiyonel)</label>
+                    <textarea id="sinavAciklama" rows="2" placeholder="Sınav hakkında notlar..."
+                        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Sınav Tarihi</label>
+                        <input type="date" id="sinavTarih"
+                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Sınav Saati</label>
+                        <input type="time" id="sinavSaat"
+                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none transition-all">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Eylem Butonları -->
+        <div class="bg-white rounded-2xl shadow-lg p-4 space-y-3">
+            <button onclick="sinavKaydet()"
+                class="w-full gradient-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                <i data-lucide="save" class="w-5 h-5 inline mr-2"></i>
+                Sınavı Kaydet
+            </button>
+            <button onclick="sinavOnizle()"
+                class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                <i data-lucide="eye" class="w-5 h-5 inline mr-2"></i>
+                Önizle & PDF
+            </button>
+            <button onclick="yeniSinav()"
+                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-medium transition-all">
+                <i data-lucide="refresh-cw" class="w-5 h-5 inline mr-2"></i>
+                Yeni Sınav
+            </button>
+        </div>
+
+
+        <!-- Görünüm Ayarları -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mt-6">
+            <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 text-white">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <i data-lucide="palette" class="w-6 h-6"></i>
+                    Görünüm Ayarları
+                </h2>
+            </div>
+            <div class="p-4 space-y-4">
+
+
+
 
 
                 <div>

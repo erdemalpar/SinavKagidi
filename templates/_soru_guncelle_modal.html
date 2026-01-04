@@ -1,6 +1,6 @@
-
 <!-- Soru Güncelleme Modal'ı -->
-<div id="soruGuncelleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+<div id="soruGuncelleModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         <!-- Header -->
         <div class="gradient-primary p-6 text-white flex items-center justify-between sticky top-0 z-10 shadow-md">
@@ -13,7 +13,8 @@
                     <p class="text-xs opacity-80">ID: <span id="guncellenecekSoruId" class="font-mono">#</span></p>
                 </div>
             </div>
-            <button onclick="kapatSoruGuncelleModal()" class="hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all">
+            <button onclick="kapatSoruGuncelleModal()"
+                class="hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
         </div>
@@ -23,7 +24,7 @@
             <input type="hidden" id="guncelleGorselYolu">
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
+
                 <!-- SOL KOLON: Soru İçeriği (8 birim) -->
                 <div class="lg:col-span-8 space-y-6">
                     <!-- Soru Metni -->
@@ -40,27 +41,37 @@
                     <!-- Şıklar -->
                     <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
                         <label class="block text-sm font-bold text-slate-800 mb-4 border-b pb-2">Şıklar ve Cevap</label>
-                        
+
                         <div class="space-y-3">
                             <!-- A Şıkkı -->
                             <div class="flex items-center gap-3 group">
-                                <div class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-600 group-hover:border-indigo-400 group-hover:text-indigo-600 transition-colors shadow-sm">A</div>
-                                <input type="text" id="guncelleSecenekA" class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm" placeholder="A şıkkı">
+                                <div
+                                    class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-600 group-hover:border-indigo-400 group-hover:text-indigo-600 transition-colors shadow-sm">
+                                    A</div>
+                                <input type="text" id="guncelleSecenekA"
+                                    class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                                    placeholder="A şıkkı">
                                 <label class="cursor-pointer">
                                     <input type="radio" name="dogruCevap" value="A" class="peer hidden">
-                                    <div class="w-8 h-8 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 text-white flex items-center justify-center transition-all hover:bg-slate-100">
+                                    <div
+                                        class="w-8 h-8 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 text-white flex items-center justify-center transition-all hover:bg-slate-100">
                                         <i data-lucide="check" class="w-4 h-4 opacity-0 peer-checked:opacity-100"></i>
                                     </div>
                                 </label>
                             </div>
-                            
+
                             <!-- B Şıkkı -->
                             <div class="flex items-center gap-3 group">
-                                <div class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-600 group-hover:border-indigo-400 group-hover:text-indigo-600 transition-colors shadow-sm">B</div>
-                                <input type="text" id="guncelleSecenekB" class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm" placeholder="B şıkkı">
+                                <div
+                                    class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-600 group-hover:border-indigo-400 group-hover:text-indigo-600 transition-colors shadow-sm">
+                                    B</div>
+                                <input type="text" id="guncelleSecenekB"
+                                    class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                                    placeholder="B şıkkı">
                                 <label class="cursor-pointer">
                                     <input type="radio" name="dogruCevap" value="B" class="peer hidden">
-                                    <div class="w-8 h-8 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 text-white flex items-center justify-center transition-all hover:bg-slate-100">
+                                    <div
+                                        class="w-8 h-8 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 text-white flex items-center justify-center transition-all hover:bg-slate-100">
                                         <i data-lucide="check" class="w-4 h-4 opacity-0 peer-checked:opacity-100"></i>
                                     </div>
                                 </label>
@@ -68,11 +79,16 @@
 
                             <!-- C Şıkkı -->
                             <div class="flex items-center gap-3 group">
-                                <div class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-600 group-hover:border-indigo-400 group-hover:text-indigo-600 transition-colors shadow-sm">C</div>
-                                <input type="text" id="guncelleSecenekC" class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm" placeholder="C şıkkı">
+                                <div
+                                    class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-600 group-hover:border-indigo-400 group-hover:text-indigo-600 transition-colors shadow-sm">
+                                    C</div>
+                                <input type="text" id="guncelleSecenekC"
+                                    class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                                    placeholder="C şıkkı">
                                 <label class="cursor-pointer">
                                     <input type="radio" name="dogruCevap" value="C" class="peer hidden">
-                                    <div class="w-8 h-8 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 text-white flex items-center justify-center transition-all hover:bg-slate-100">
+                                    <div
+                                        class="w-8 h-8 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 text-white flex items-center justify-center transition-all hover:bg-slate-100">
                                         <i data-lucide="check" class="w-4 h-4 opacity-0 peer-checked:opacity-100"></i>
                                     </div>
                                 </label>
@@ -80,11 +96,16 @@
 
                             <!-- D Şıkkı -->
                             <div class="flex items-center gap-3 group">
-                                <div class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-600 group-hover:border-indigo-400 group-hover:text-indigo-600 transition-colors shadow-sm">D</div>
-                                <input type="text" id="guncelleSecenekD" class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm" placeholder="D şıkkı">
+                                <div
+                                    class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-600 group-hover:border-indigo-400 group-hover:text-indigo-600 transition-colors shadow-sm">
+                                    D</div>
+                                <input type="text" id="guncelleSecenekD"
+                                    class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                                    placeholder="D şıkkı">
                                 <label class="cursor-pointer">
                                     <input type="radio" name="dogruCevap" value="D" class="peer hidden">
-                                    <div class="w-8 h-8 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 text-white flex items-center justify-center transition-all hover:bg-slate-100">
+                                    <div
+                                        class="w-8 h-8 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 text-white flex items-center justify-center transition-all hover:bg-slate-100">
                                         <i data-lucide="check" class="w-4 h-4 opacity-0 peer-checked:opacity-100"></i>
                                     </div>
                                 </label>
@@ -92,11 +113,16 @@
 
                             <!-- E Şıkkı -->
                             <div class="flex items-center gap-3 group">
-                                <div class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-600 group-hover:border-indigo-400 group-hover:text-indigo-600 transition-colors shadow-sm">E</div>
-                                <input type="text" id="guncelleSecenekE" class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm" placeholder="E şıkkı (Opsiyonel)">
+                                <div
+                                    class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-600 group-hover:border-indigo-400 group-hover:text-indigo-600 transition-colors shadow-sm">
+                                    E</div>
+                                <input type="text" id="guncelleSecenekE"
+                                    class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                                    placeholder="E şıkkı (Opsiyonel)">
                                 <label class="cursor-pointer">
                                     <input type="radio" name="dogruCevap" value="E" class="peer hidden">
-                                    <div class="w-8 h-8 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 text-white flex items-center justify-center transition-all hover:bg-slate-100">
+                                    <div
+                                        class="w-8 h-8 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 text-white flex items-center justify-center transition-all hover:bg-slate-100">
                                         <i data-lucide="check" class="w-4 h-4 opacity-0 peer-checked:opacity-100"></i>
                                     </div>
                                 </label>
@@ -107,36 +133,45 @@
 
                 <!-- SAĞ KOLON: Görsel ve Ayarlar (4 birim) -->
                 <div class="lg:col-span-4 space-y-6">
-                    
+
                     <!-- Görsel Alanı -->
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 font-medium text-slate-700 flex items-center gap-2">
+                        <div
+                            class="bg-slate-50 px-4 py-3 border-b border-slate-200 font-medium text-slate-700 flex items-center gap-2">
                             <i data-lucide="image" class="w-4 h-4 text-purple-600"></i>
                             Görsel Ayarları
                         </div>
                         <div class="p-4 space-y-4">
                             <!-- Görsel Yükle -->
                             <div id="gorselArea" class="relative group">
-                                <div id="gorselPlaceholder" class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer" onclick="document.getElementById('guncelleGorselInput').click()">
-                                    <i data-lucide="upload" class="w-8 h-8 mx-auto text-slate-400 mb-2 group-hover:text-purple-500"></i>
+                                <div id="gorselPlaceholder"
+                                    class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer"
+                                    onclick="document.getElementById('guncelleGorselInput').click()">
+                                    <i data-lucide="upload"
+                                        class="w-8 h-8 mx-auto text-slate-400 mb-2 group-hover:text-purple-500"></i>
                                     <p class="text-xs text-slate-500">Görsel yüklemek için tıklayın</p>
                                 </div>
                                 <div id="gorselPreviewContainer" class="hidden relative">
-                                    <img id="gorselPreviewImg" src="" class="w-full h-40 object-contain bg-slate-100 rounded-lg border">
-                                    <button type="button" onclick="gorselKaldir()" class="absolute top-2 right-2 bg-red-500 text-white p-1 rounded shadow hover:bg-red-600 transition-all">
+                                    <img id="gorselPreviewImg" src=""
+                                        class="w-full h-40 object-contain bg-slate-100 rounded-lg border">
+                                    <button type="button" onclick="gorselKaldir()"
+                                        class="absolute top-2 right-2 bg-red-500 text-white p-1 rounded shadow hover:bg-red-600 transition-all">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </div>
-                                <input type="file" id="guncelleGorselInput" class="hidden" accept="image/*" onchange="gorselYukle(this)">
+                                <input type="file" id="guncelleGorselInput" class="hidden" accept="image/*"
+                                    onchange="gorselYukle(this)">
                             </div>
 
                             <!-- Görsel Konumu -->
                             <div>
                                 <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Konum</label>
-                                <select id="guncelleGorselKonum" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-purple-500">
+                                <select id="guncelleGorselKonum"
+                                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-purple-500">
                                     <option value="ustte">⬆️ Sorunun Üstünde</option>
-                                    <option value="arada" selected>↕️ Metin ve Şıklar Arasında</option>
-                                    <option value="yanda">➡️ Sağ Tarafta</option>
+                                    <option value="arada">↕️ Metin ve Şıklar Arasında</option>
+                                    <option value="altta">⬇️ Şıkların Altında</option>
+                                    <option value="yanda" selected>➡️ Sağ Tarafta</option>
                                 </select>
                             </div>
                         </div>
@@ -144,18 +179,21 @@
 
                     <!-- Düzen Ayarları -->
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 font-medium text-slate-700 flex items-center gap-2">
+                        <div
+                            class="bg-slate-50 px-4 py-3 border-b border-slate-200 font-medium text-slate-700 flex items-center gap-2">
                             <i data-lucide="settings-2" class="w-4 h-4 text-blue-600"></i>
                             Diğer Ayarlar
                         </div>
                         <div class="p-4 space-y-4">
                             <!-- Şık Düzeni -->
                             <div>
-                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Şık Düzeni</label>
-                                <select id="guncelleSikDuzeni" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500">
-                                    <option value="alt_alta" selected>⬇️ Alt Alta (Standart)</option>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Şık
+                                    Düzeni</label>
+                                <select id="guncelleSikDuzeni"
+                                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                                    <option value="alt_alta">⬇️ Alt Alta (Standart)</option>
                                     <option value="yan_yana">➡️ Yan Yana (Tek Satır)</option>
-                                    <option value="iki_sutun">🔲 İki Sütun</option>
+                                    <option value="iki_sutun" selected>🔲 İki Sütun</option>
                                 </select>
                             </div>
 
@@ -163,15 +201,18 @@
                             <div>
                                 <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Puan</label>
                                 <div class="flex items-center gap-2">
-                                    <input type="number" id="guncellePuan" class="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-center" min="1" max="100">
+                                    <input type="number" id="guncellePuan"
+                                        class="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-center"
+                                        min="1" max="100">
                                     <span class="text-sm text-slate-500">Puan</span>
                                 </div>
                             </div>
-                            
+
                             <!-- Zorluk -->
                             <div>
                                 <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Zorluk</label>
-                                <select id="guncelleZorluk" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm">
+                                <select id="guncelleZorluk"
+                                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm">
                                     <option value="Kolay">🟢 Kolay</option>
                                     <option value="Orta">🟡 Orta</option>
                                     <option value="Zor">🔴 Zor</option>
@@ -180,7 +221,9 @@
 
                             <div class="mt-2">
                                 <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Konu</label>
-                                <input type="text" id="guncelleKonu" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Konu etiketi">
+                                <input type="text" id="guncelleKonu"
+                                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                    placeholder="Konu etiketi">
                             </div>
                         </div>
                     </div>
@@ -188,20 +231,22 @@
             </div>
 
             <!-- Footer Buttons -->
-            
+
             <div class="mt-8 border-t pt-6">
                 <h3 class="text-sm font-bold text-slate-500 uppercase mb-4 flex items-center gap-2">
                     <i data-lucide="eye" class="w-4 h-4"></i> Kağıt Görünümü Önizleme
                 </h3>
                 <div class="bg-white border border-slate-200 p-8 rounded-xl shadow-sm relative overflow-hidden group">
-                    <div class="absolute inset-0 opacity-[0.02] pointer-events-none" style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;"></div>
+                    <div class="absolute inset-0 opacity-[0.02] pointer-events-none"
+                        style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;">
+                    </div>
                     <div id="guncelleCanliOnizleme" class="relative z-10 font-serif">
                         <!-- JS ile dolar -->
                     </div>
                 </div>
             </div>
-    
-<div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button type="button" onclick="kapatSoruGuncelleModal()"
                     class="px-6 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 font-medium transition-all text-sm">
                     İptal

@@ -57,9 +57,14 @@ def soru_ekle():
             zorluk=data.get('zorluk', 'Orta'),
             puan=data.get('puan', 5),
             gorsel_yolu=data.get('gorsel_yolu'),
-            gorsel_konum=data.get('gorsel_konum', 'arada'),
-            sik_duzeni=data.get('sik_duzeni', 'alt_alta')
+            gorsel_konum=data.get('gorsel_konum', 'yanda'),
+            sik_duzeni=data.get('sik_duzeni', 'iki_sutun')
         )
+        # Mükerrer Kayıt Kontrolü
+        mevcut = Soru.query.filter_by(soru_metni=data.get('soru_metni')).first()
+        if mevcut:
+            return jsonify({'basarili': False, 'mesaj': 'Bu soru zaten soru bankasında kayıtlı!'}), 400
+
         db.session.add(yeni_soru)
         db.session.commit()
         return jsonify({'basarili': True, 'mesaj': 'Soru başarıyla eklendi', 'soru_id': yeni_soru.id})
@@ -75,6 +80,18 @@ def soru_sil(soru_id):
         db.session.delete(soru)
         db.session.commit()
         return jsonify({'basarili': True, 'mesaj': 'Soru başarıyla silindi'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+@app.route('/tum-sorulari-sil', methods=['DELETE'])
+def tum_sorulari_sil():
+    """Tüm soruları sil"""
+    try:
+        # Tüm soruları sil
+        silinen_sayisi = Soru.query.delete()
+        db.session.commit()
+        return jsonify({'basarili': True, 'mesaj': f'{silinen_sayisi} soru başarıyla silindi.'})
     except Exception as e:
         db.session.rollback()
         return jsonify({'basarili': False, 'mesaj': str(e)}), 400
@@ -146,9 +163,15 @@ def dosya_yukle():
             # Soruları veritabanına ekle
             eklenen_sayisi = 0
             hatali_sayisi = 0
+            mukerrer_sayisi = 0
             
             for soru_data in sorular:
                 try:
+                    # Mükerrer Kontrolü
+                    if Soru.query.filter_by(soru_metni=soru_data.get('soru_metni')).first():
+                        mukerrer_sayisi += 1
+                        continue
+
                     yeni_soru = Soru(
                         soru_metni=soru_data.get('soru_metni'),
                         secenek_a=soru_data.get('secenek_a'),
@@ -159,7 +182,10 @@ def dosya_yukle():
                         dogru_cevap=soru_data.get('dogru_cevap', 'A'),
                         konu=soru_data.get('konu', ''),
                         zorluk=soru_data.get('zorluk', 'Orta'),
-                        puan=soru_data.get('puan', 5)
+                        puan=soru_data.get('puan', 5),
+                        gorsel_yolu=soru_data.get('gorsel_yolu'),
+                        gorsel_konum=soru_data.get('gorsel_konum', 'yanda'),
+                        sik_duzeni=soru_data.get('sik_duzeni', 'iki_sutun')
                     )
                     db.session.add(yeni_soru)
                     eklenen_sayisi += 1
@@ -170,10 +196,15 @@ def dosya_yukle():
             
             db.session.commit()
             
+            mesaj = f'İşlem tamamlandı: {eklenen_sayisi} eklendi.'
+            if mukerrer_sayisi > 0:
+                mesaj += f' ({mukerrer_sayisi} mükerrer kayıt atlandı)'
+            if hatali_sayisi > 0:
+                mesaj += f' ({hatali_sayisi} hatalı kayıt)'
+
             return jsonify({
                 'basarili': True, 
-                'mesaj': f'Başarıyla {eklenen_sayisi} soru eklendi!' + 
-                        (f' ({hatali_sayisi} soru eklenemedi)' if hatali_sayisi > 0 else ''),
+                'mesaj': mesaj,
                 'dosya_adi': dosya_adi,
                 'eklenen_soru_sayisi': eklenen_sayisi,
                 'hatali_soru_sayisi': hatali_sayisi
