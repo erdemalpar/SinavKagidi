@@ -307,6 +307,7 @@
                                 </div>
                                 <input type="file" id="ekleGorselInput" class="hidden" accept="image/*"
                                     onchange="ekleGorselYukle(this)">
+                                <input type="hidden" id="ekleGorselYolu" value="">
                             </div>
                             <!-- Konum -->
                             <div>
@@ -470,7 +471,95 @@
     function kapatSoruEkleModal() {
         document.getElementById('soruEkleModal').classList.add('hidden');
         document.getElementById('soruEkleForm').reset();
+        // Görsel alanını temizle
+        const previewContainer = document.getElementById('ekleGorselPreviewContainer');
+        const placeholder = document.getElementById('ekleGorselPlaceholder');
+        if (previewContainer) previewContainer.classList.add('hidden');
+        if (placeholder) placeholder.classList.remove('hidden');
+        const gorselYolu = document.getElementById('ekleGorselYolu');
+        if (gorselYolu) gorselYolu.value = '';
     }
+
+    // --- YENİ SORU EKLEME GÖRSEL VE FORM MANTIĞI ---
+    async function ekleGorselYukle(input) {
+        if (input.files && input.files[0]) {
+            const formData = new FormData();
+            formData.append('gorsel', input.files[0]);
+            try {
+                const response = await fetch('/gorsel-yukle', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.basarili) {
+                    document.getElementById('ekleGorselYolu').value = data.dosya_yolu;
+                    document.getElementById('ekleGorselPreviewImg').src = data.dosya_yolu;
+                    document.getElementById('ekleGorselPlaceholder').classList.add('hidden');
+                    document.getElementById('ekleGorselPreviewContainer').classList.remove('hidden');
+                    onizlemeGuncelle('ekle');
+                    toastGoster('Görsel yüklendi', 'success');
+                } else {
+                    toastGoster(data.mesaj, 'error');
+                }
+            } catch (error) {
+                console.error('Görsel yükleme hatası:', error);
+                toastGoster('Görsel yüklenirken hata oluştu', 'error');
+            }
+        }
+    }
+
+    function ekleGorselKaldir() {
+        document.getElementById('ekleGorselYolu').value = '';
+        document.getElementById('ekleGorselInput').value = '';
+        document.getElementById('ekleGorselPlaceholder').classList.remove('hidden');
+        document.getElementById('ekleGorselPreviewContainer').classList.add('hidden');
+        onizlemeGuncelle('ekle');
+    }
+
+    // Yeni Soru Kaydetme
+    document.getElementById('soruEkleForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+
+        const soruData = {
+            soru_metni: document.getElementById('ekleSoruMetni').value,
+            secenek_a: document.getElementById('ekleSecenekA').value,
+            secenek_b: document.getElementById('ekleSecenekB').value,
+            secenek_c: document.getElementById('ekleSecenekC').value,
+            secenek_d: document.getElementById('ekleSecenekD').value,
+            secenek_e: document.getElementById('ekleSecenekE').value,
+            dogru_cevap: document.querySelector('input[name="ekleDogruCevap"]:checked')?.value || 'A',
+            konu: document.getElementById('ekleKonu').value,
+            zorluk: document.getElementById('ekleZorluk').value,
+            puan: parseInt(document.getElementById('eklePuan').value),
+            soru_tipi: document.getElementById('ekleSoruTipi').value,
+            gorsel_yolu: document.getElementById('ekleGorselYolu').value,
+            gorsel_konum: document.getElementById('ekleGorselKonum').value,
+            sik_duzeni: document.getElementById('ekleSikDuzeni').value
+        };
+
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Kaydediliyor...';
+            const response = await fetch('/soru-ekle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(soruData)
+            });
+            const data = await response.json();
+            if (data.basarili) {
+                toastGoster('Soru bankasına eklendi!', 'success');
+                kapatSoruEkleModal();
+                setTimeout(() => location.reload(), 800);
+            } else {
+                toastGoster(data.mesaj, 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        } catch (error) {
+            toastGoster('Bir hata oluştu', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
 
     function acDosyaYukleModal() {
         document.getElementById('dosyaYukleModal').classList.remove('hidden');
@@ -566,41 +655,6 @@
         }
     }
 
-    document.getElementById('soruEkleForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const soruData = {
-            soru_metni: document.getElementById('soruMetni').value,
-            secenek_a: document.getElementById('secenekA').value,
-            secenek_b: document.getElementById('secenekB').value,
-            secenek_c: document.getElementById('secenekC').value,
-            secenek_d: document.getElementById('secenekD').value,
-            secenek_e: document.getElementById('secenekE').value,
-            dogru_cevap: document.getElementById('dogruCevap').value,
-            konu: document.getElementById('ekleKonu').value,
-            zorluk: document.getElementById('ekleZorluk').value,
-            puan: parseInt(document.getElementById('eklePuan').value),
-            soru_tipi: document.getElementById('ekleSoruTipi').value
-        };
-
-        logger.baslik('➕ YENİ SORU EKLEME');
-        logger.bilgi('Soru verileri hazırlandı', soruData);
-
-        try {
-            const data = await apiIstegi('/soru-ekle', {
-                method: 'POST',
-                body: JSON.stringify(soruData)
-            });
-
-            logger.basarili('Soru veritabanına eklendi', { soru_id: data.soru_id });
-            toastGoster('Soru başarıyla eklendi!', 'success');
-            kapatSoruEkleModal();
-            setTimeout(() => location.reload(), 1000);
-        } catch (error) {
-            logger.hata('Soru ekleme başarısız', error);
-        }
-    });
-
     async function soruSil(soruId) {
         if (!confirm('Bu soruyu silmek istediğinizden emin misiniz?')) return;
 
@@ -679,7 +733,7 @@
         }
     }
 
-    // Görsel Yükleme Fonksiyonu
+    // --- GÜNCELLEME MODALI GÖRSEL İŞLEMLERİ ---
     async function gorselYukle(input) {
         if (input.files && input.files[0]) {
             const formData = new FormData();

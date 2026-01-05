@@ -109,12 +109,52 @@
         width: 210mm;
         margin: 0 auto;
         min-height: 297mm;
+        /* Tam bir A4 uzunluğu */
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        /* Padding'ler boyutu büyütmez */
+        overflow: hidden;
+        /* Dışarı taşmaları engeller */
     }
 
     .a4-sayfa {
         padding: 0 2cm 0 2cm;
-        height: 100%;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        /* Kalan tüm A4 yüksekliğini kaplar */
         position: relative;
+        box-sizing: border-box;
+    }
+
+    /* İmza Alanı Düzenlemeleri */
+    .ekstra-imza {
+        display: block !important;
+        margin-top: 2rem !important;
+        padding-top: 0.75rem !important;
+        border-top: 2px solid #0f172a !important;
+        /* Koyu lacivert/siyah çizgi */
+        text-align: center !important;
+        width: 100% !important;
+        page-break-after: always !important;
+        /* Kendisinden sonrasını yeni sayfaya atar */
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        clear: both !important;
+    }
+
+    .ekstra-imza p {
+        margin: 0 !important;
+        font-weight: bold !important;
+        color: #0f172a !important;
+        font-size: 11pt !important;
+    }
+
+    /* Sayfa başı olan eleman için ek kurallar */
+    .sayfa-basi {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
     }
 </style>
 {% endblock %}
@@ -161,8 +201,14 @@
                     PDF
                 </button>
             </div>
+            <button id="siralaBtn" onclick="soruSiralamayiAc()"
+                class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-100 rounded-lg transition-all text-xs font-bold mt-2 shadow-sm">
+                <i data-lucide="list-ordered" class="w-4 h-4"></i>
+                <span>Soru Sıralamasını Değiştir</span>
+            </button>
+
             <button id="sinirBtn" onclick="sayfaSinirlariniGoster(this)"
-                class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg transition-all text-xs font-medium">
+                class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg transition-all text-xs font-medium mt-2">
                 <i data-lucide="scan-line" class="w-3.5 h-3.5"></i>
                 <span>Sayfa Sınırlarını Göster</span>
             </button>
@@ -275,15 +321,15 @@
                         class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600">
                 </div>
 
-                <!-- Alt Kenar -->
+                <!-- İmza Alt Boşluk -->
                 <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs text-slate-600">
-                        <span>Alt Kenar</span>
-                        <span id="altBoslukLabel" class="font-mono text-[10px]">{{ sinav.alt_bosluk|default(40)
+                        <span>Alt Boşluk (İmza)</span>
+                        <span id="imzaAltBoslukLabel" class="font-mono text-[10px]">{{ sinav.imza_alt_bosluk|default(40)
                             }}px</span>
                     </div>
-                    <input type="range" id="altBoslukSlider" min="0" max="200" step="5"
-                        value="{{ sinav.alt_bosluk|default(40) }}" oninput="altBoslukDegistir(this.value)"
+                    <input type="range" id="imzaAltBoslukSlider" min="0" max="300" step="5"
+                        value="{{ sinav.imza_alt_bosluk|default(40) }}" oninput="imzaAltBoslukDegistir(this.value)"
                         class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600">
                 </div>
             </div>
@@ -295,8 +341,7 @@
     <div class="flex-1 order-2 xl:order-1 w-full flex justify-center min-w-0">
         <div id="sinavKagidi" style="font-family: {{ sinav.yazi_fontu or " inherit" }}; font-size: {{ sinav.yazi_boyutu
             or 12 }}px; color: {{ sinav.yazi_rengi or "#000000" }}; font-weight: {{ sinav.yazi_stili or "normal" }};
-            padding-top: {{ sinav.ust_bosluk|default(40) }}px; padding-bottom: {{ sinav.alt_bosluk|default(40) }}px;"
-            class="sinav-kagidi">
+            padding-top: {{ sinav.ust_bosluk|default(40) }}px;" class="sinav-kagidi">
             <div class="a4-sayfa">
 
                 <!-- Antet (Logo, Başlık vs.) -->
@@ -316,18 +361,18 @@
                                 data-base-size="{{ sinav.okul_adi_boyutu or 24 }}"
                                 style="font-size: {{ (sinav.okul_adi_boyutu or 24) * (sinav.baslik_katsayisi|default(100))/100 }}px;">
                                 {{
-                                sinav.okul_adi or ayarlar.okul_adi or "" }}</h1>
+                                sinav.okul_adi or (ayarlar.okul_adi if ayarlar else 'OKUL ADI') }}</h1>
 
                             <h2 class="baslik-metin text-lg font-bold text-slate-700 mb-0.5 leading-snug uppercase"
                                 data-base-size="{{ sinav.egitim_yili_boyutu or 18 }}"
                                 style="font-size: {{ (sinav.egitim_yili_boyutu or 18) * (sinav.baslik_katsayisi|default(100))/100 }}px;">
-                                {{ sinav.egitim_yili or ayarlar.egitim_yili }} Eğitim Öğretim Yılı
+                                {{ sinav.egitim_yili or (ayarlar.egitim_yili if ayarlar else '') }} Eğitim Öğretim Yılı
                             </h2>
 
                             <h3 class="baslik-metin text-base font-bold text-slate-700 mb-0.5 leading-snug uppercase"
                                 data-base-size="{{ sinav.donem_boyutu or 16 }}"
                                 style="font-size: {{ (sinav.donem_boyutu or 16) * (sinav.baslik_katsayisi|default(100))/100 }}px;">
-                                {{ sinav.donem or ayarlar.donem }}
+                                {{ sinav.donem or (ayarlar.donem if ayarlar else '') }}
                             </h3>
 
                             {% if sinav.baslik %}
@@ -359,7 +404,8 @@
                         <div class="flex items-end gap-2">
                             <span class="font-bold text-slate-900 min-w-[60px]">Tarih:</span>
                             <span class="flex-1 border-b border-black border-dotted h-4 pb-0.5 pl-2 font-normal">{{
-                                sinav.tarih|turkce_tarih or ayarlar.tarih|turkce_tarih or '' }}
+                                sinav.tarih|turkce_tarih or (ayarlar.tarih|turkce_tarih if ayarlar and ayarlar.tarih
+                                else '') }}
                                 {% if sinav.saat %} / {{ sinav.saat }}{% endif %}
                             </span>
                         </div>
@@ -521,7 +567,8 @@
                 <!-- Sayfa Altı (İmza vb.) -->
                 {% if ayarlar_imza %}
 
-                <div id="anaImzaAlani" class="mt-16 pt-8 border-t-2 border-slate-900 page-break-avoid">
+                <div id="anaImzaAlani" class="mt-auto pt-8 border-t-2 border-slate-900 page-break-avoid flex-shrink-0"
+                    style="margin-bottom: {{ sinav.imza_alt_bosluk|default(40) }}px;">
                     <div class="text-center">
                         <p class="font-bold text-slate-900">{{ sinav.imza_metni or ayarlar_imza.imza_metni }}</p>
                     </div>
@@ -554,35 +601,83 @@
                 soruBlok.classList.toggle('sayfa-basi');
 
                 const isPageBreak = soruBlok.classList.contains('sayfa-basi');
-                const anaImza = document.getElementById('anaImzaAlani');
 
                 if (isPageBreak) {
                     btn.classList.add('bg-red-600');
                     btn.classList.remove('bg-slate-800');
                     btn.innerHTML = '<i data-lucide="x" class="w-3 h-3"></i> Sayfa Sonunu Kaldır';
-
-                    // İmza alanını kopyala ve önceki sayfanın sonuna (bu bloğun öncesine) ekle
-                    if (anaImza) {
-                        const clone = anaImza.cloneNode(true);
-                        clone.removeAttribute('id');
-                        clone.classList.add('ekstra-imza', 'mb-8', 'pb-8');
-                        // Sayfa başı olan elemanın margin-top'ını sıfırla ki imza ile karışmasın
-                        // Ancak sayfa-basi class'ı zaten margin-top: 0 yapıyor olabilir.
-                        soruBlok.parentNode.insertBefore(clone, soruBlok);
-                    }
-
                 } else {
                     btn.classList.remove('bg-red-600');
                     btn.classList.add('bg-slate-800');
                     btn.innerHTML = '<i data-lucide="scissors" class="w-3 h-3"></i> Yeni Sayfadan Başlat';
-
-                    // Eklenen imzayı bul ve kaldır
-                    const prev = soruBlok.previousElementSibling;
-                    if (prev && prev.classList.contains('ekstra-imza')) {
-                        prev.remove();
-                    }
                 }
                 lucide.createIcons();
+            }
+
+            // --- Soru Sıralama Fonksiyonları ---
+            let sortableInstance;
+
+            function soruSiralamayiAc() {
+                const modal = document.getElementById('siralaModal');
+                if (!modal) return;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                if (!sortableInstance) {
+                    const el = document.getElementById('siralanabilirListe');
+                    sortableInstance = Sortable.create(el, {
+                        animation: 150,
+                        ghostClass: 'bg-indigo-50',
+                        onEnd: function () {
+                            const itemler = el.querySelectorAll('.sira-no');
+                            itemler.forEach((item, index) => {
+                                item.innerText = index + 1;
+                            });
+                        }
+                    });
+                }
+                lucide.createIcons();
+            }
+
+            function soruSiralamayiKapat() {
+                const modal = document.getElementById('siralaModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            }
+
+            async function siralamayiKaydet() {
+                const el = document.getElementById('siralanabilirListe');
+                const itemler = el.children;
+                const siralamas = [];
+
+                for (let i = 0; i < itemler.length; i++) {
+                    siralamas.push({
+                        soru_id: parseInt(itemler[i].getAttribute('data-soru-id')),
+                        sira: i + 1
+                    });
+                }
+
+                try {
+                    toastGoster('Sıralama güncelleniyor...', 'info');
+                    const response = await fetch('/sinav-soru-sirala/{{ sinav.id }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ siralamas: siralamas })
+                    });
+
+                    const data = await response.json();
+                    if (data.basarili) {
+                        toastGoster('Sıralama başarıyla kaydedildi!', 'success');
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        toastGoster('Hata: ' + data.mesaj, 'error');
+                    }
+                } catch (err) {
+                    console.error('Sıralama hatası:', err);
+                    toastGoster('Sistem hatası!', 'error');
+                }
             }
 
             let selectedImage = null;
@@ -898,10 +993,71 @@
                 ayarKaydet('ust_bosluk', val);
             }
 
-            function altBoslukDegistir(val) {
-                document.getElementById('altBoslukLabel').textContent = val + 'px';
-                document.getElementById('sinavKagidi').style.paddingBottom = val + 'px';
-                ayarKaydet('alt_bosluk', val);
+            function imzaAltBoslukDegistir(val) {
+                document.getElementById('imzaAltBoslukLabel').textContent = val + 'px';
+                const imzaAlani = document.getElementById('anaImzaAlani');
+                if (imzaAlani) {
+                    imzaAlani.style.marginBottom = val + 'px';
+                }
+                ayarKaydet('imza_alt_bosluk', val);
             }
         </script>
+
+        <!-- Soru Sıralama Modalı -->
+        <div id="siralaModal"
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fade-in">
+                <div class="gradient-primary p-6 text-white flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="list-ordered" class="w-6 h-6"></i>
+                        <div>
+                            <h3 class="text-xl font-bold">Soru Sıralamasını Düzenle</h3>
+                            <p class="text-xs opacity-80 mt-1">Sürükleyerek soruların yerini değiştirebilirsiniz</p>
+                        </div>
+                    </div>
+                    <button onclick="soruSiralamayiKapat()" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 max-h-[60vh] overflow-y-auto" id="siralanabilirListe">
+                    {% for sinav_sorusu in sinav.sorular %}
+                    <div class="flex items-center gap-4 p-4 mb-3 bg-slate-50 border border-slate-200 rounded-xl cursor-move hover:bg-white hover:border-indigo-300 hover:shadow-md transition-all group"
+                        data-soru-id="{{ sinav_sorusu.soru.id }}">
+                        <div class="flex-shrink-0 flex flex-col items-center gap-1">
+                            <i data-lucide="grip-vertical"
+                                class="w-5 h-5 text-slate-300 group-hover:text-indigo-400"></i>
+                            <span class="text-xs font-bold text-slate-400 group-hover:text-indigo-600 sira-no">{{
+                                loop.index }}</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-slate-700 line-clamp-2">{{ sinav_sorusu.soru.soru_metni
+                                }}</p>
+                            <div
+                                class="flex items-center gap-3 mt-1 text-[10px] text-slate-500 uppercase tracking-wider">
+                                <span>{{ sinav_sorusu.soru.konu or 'Konusuz' }}</span>
+                                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span>{{ sinav_sorusu.soru.puan }} Puan</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="p-6 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+                    <button onclick="soruSiralamayiKapat()"
+                        class="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors">
+                        İptal
+                    </button>
+                    <button onclick="siralamayiKaydet()"
+                        class="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Sıralamayı Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
         {% endblock %}
+        ```

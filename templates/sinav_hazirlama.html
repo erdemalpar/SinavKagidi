@@ -576,6 +576,13 @@
 
             toastGoster('Sınav başarıyla kaydedildi!', 'success');
 
+            if (typeof logger !== 'undefined') {
+                logger.basarili('Sınav Kaydedildi', {
+                    sinav_id: data.sinav_id,
+                    zaman: new Date().toLocaleString('tr-TR')
+                });
+            }
+
             // Önizleme sayfasına yönlendir
             setTimeout(() => {
                 window.location.href = `/sinav-onizleme/${data.sinav_id}`;

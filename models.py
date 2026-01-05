@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -22,8 +22,8 @@ class Soru(db.Model):
     gorsel_konum = db.Column(db.String(20), default='arada')  # ustte, arada, yanda
     sik_duzeni = db.Column(db.String(20), default='alt_alta')  # alt_alta, yan_yana
     soru_tipi = db.Column(db.String(20), default='test')  # test, klasik
-    olusturma_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
-    guncelleme_tarihi = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    olusturma_tarihi = db.Column(db.DateTime, default=datetime.datetime.now)
+    guncelleme_tarihi = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     
     # İlişkiler
     sinav_sorulari = db.relationship('SinavSorusu', back_populates='soru', cascade='all, delete-orphan')
@@ -65,8 +65,8 @@ class SinavAyarlari(db.Model):
     salon = db.Column(db.String(50))
     puan_goster = db.Column(db.Boolean, default=True)
     logo_yolu = db.Column(db.String(500))
-    olusturma_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
-    guncelleme_tarihi = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    olusturma_tarihi = db.Column(db.DateTime, default=datetime.datetime.now)
+    guncelleme_tarihi = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     
     def __repr__(self):
         return f'<SinavAyarlari {self.okul_adi} - {self.egitim_yili}>'
@@ -118,9 +118,10 @@ class SinavKagidi(db.Model):
     alt_bosluk = db.Column(db.Integer, default=40) # Pixel olarak (Bottom Margin)
     baslik_katsayisi = db.Column(db.Integer, default=100) # Header Scale Factor (%)
     imza_metni = db.Column(db.String(200), default='Öğr.Gör.Erdem ALPAR')
+    imza_alt_bosluk = db.Column(db.Integer, default=40)
     
-    olusturma_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
-    guncelleme_tarihi = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    olusturma_tarihi = db.Column(db.DateTime, default=datetime.datetime.now)
+    guncelleme_tarihi = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     
     # İlişkiler
     sorular = db.relationship('SinavSorusu', back_populates='sinav', cascade='all, delete-orphan', order_by='SinavSorusu.sira')
@@ -167,7 +168,7 @@ class Ayarlar(db.Model):
     cizgi_rengi = db.Column(db.String(7), default='#CCCCCC')
     cizgi_kalinlik = db.Column(db.Float, default=1.0)
     metin_boyutu = db.Column(db.Integer, default=12)
-    guncelleme_tarihi = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    guncelleme_tarihi = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     
     def __repr__(self):
         return f'<Ayarlar {self.imza_metni}>'

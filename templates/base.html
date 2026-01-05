@@ -152,11 +152,34 @@
 
     <script>
         // ============================================
-        // RENKLI CONSOLE LOGGING SİSTEMİ
+        // RENKLI CONSOLE LOGGING SİSTEMİ (TEMİZLENDİ)
         // ============================================
 
+        // Tailwind ve bazı eklenti uyarılarını gizle
+        (function () {
+            const originalWarn = console.warn;
+            const originalError = console.error;
+            const originalLog = console.log;
+
+            console.warn = function (...args) {
+                if (typeof args[0] === 'string' && (args[0].includes('tailwindcss.com') || args[0].includes('cdn.tailwindcss.com'))) return;
+                originalWarn.apply(console, args);
+            };
+
+            console.error = function (...args) {
+                if (typeof args[0] === 'string' && (args[0].includes('chrome-extension') || args[0].includes('NET::ERR_FAILED'))) return;
+                originalError.apply(console, args);
+            };
+
+            // Debug modu kapalıyken logları sustur (İsteğe bağlı açılabilir: window.logger.debug = true)
+            console.log = function (...args) {
+                if (window.logger && !window.logger.isEnabled && typeof args[0] === 'string' && args[0].includes('%c')) return;
+                originalLog.apply(console, args);
+            };
+        })();
+
         const ConsoleLogger = {
-            // Stil şablonları
+            isEnabled: true, // Hata ayıklama için açıldı
             styles: {
                 basarili: 'background: #10b981; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
                 hata: 'background: #ef4444; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
@@ -166,59 +189,46 @@
                 veri: 'color: #64748b; font-style: italic;'
             },
 
-            // Başarılı işlem logu
             basarili: function (mesaj, veri = null) {
+                if (!this.isEnabled) return;
                 console.log('%c ✓ BAŞARILI ', this.styles.basarili, mesaj);
-                if (veri) {
-                    console.log('%c   └─ Veri:', this.styles.veri, veri);
-                }
+                if (veri) console.log('%c   └─ Veri:', this.styles.veri, veri);
             },
 
-            // Hata logu
             hata: function (mesaj, hataDetay = null) {
+                // Hataları her zaman göster ama eklenti hatalarını filtre uygula
                 console.error('%c ✗ HATA ', this.styles.hata, mesaj);
-                if (hataDetay) {
-                    console.error('%c   └─ Detay:', this.styles.veri, hataDetay);
-                }
+                if (hataDetay) console.error('%c   └─ Detay:', this.styles.veri, hataDetay);
             },
 
-            // Uyarı logu
             uyari: function (mesaj, detay = null) {
+                if (!this.isEnabled) return;
                 console.warn('%c ⚠ UYARI ', this.styles.uyari, mesaj);
-                if (detay) {
-                    console.warn('%c   └─ Detay:', this.styles.veri, detay);
-                }
+                if (detay) console.warn('%c   └─ Detay:', this.styles.veri, detay);
             },
 
-            // Bilgi logu
             bilgi: function (mesaj, veri = null) {
+                if (!this.isEnabled) return;
                 console.info('%c ℹ BİLGİ ', this.styles.bilgi, mesaj);
-                if (veri) {
-                    console.info('%c   └─ Veri:', this.styles.veri, veri);
-                }
+                if (veri) console.info('%c   └─ Veri:', this.styles.veri, veri);
             },
 
-            // Bölüm başlığı
             baslik: function (mesaj) {
-                console.log('%c ═══════════════════════════════════════════', 'color: #667eea;');
+                if (!this.isEnabled) return;
                 console.log('%c ' + mesaj, this.styles.baslik);
-                console.log('%c ═══════════════════════════════════════════', 'color: #667eea;');
             },
 
-            // API isteği başlangıç
             apiBaslangic: function (method, url) {
+                if (!this.isEnabled) return;
                 console.groupCollapsed('%c 🌐 API İSTEĞİ ', this.styles.bilgi, `${method} ${url}`);
-                console.log('Zaman:', new Date().toLocaleTimeString('tr-TR'));
             },
 
-            // API isteği bitiş
             apiBitis: function (basarili, sure, veri = null) {
+                if (!this.isEnabled) return;
                 if (basarili) {
                     console.log('%c ✓ İstek Başarılı ', this.styles.basarili, `${sure}ms`);
-                    if (veri) console.log('Yanıt:', veri);
                 } else {
                     console.log('%c ✗ İstek Başarısız ', this.styles.hata, `${sure}ms`);
-                    if (veri) console.error('Hata:', veri);
                 }
                 console.groupEnd();
             }
@@ -376,11 +386,6 @@
                 link.classList.add('bg-indigo-50', 'text-indigo-600');
                 link.classList.remove('text-slate-700');
             }
-        });
-
-        logger.basarili('Uygulama başlatıldı', {
-            sayfa: currentPath,
-            zaman: new Date().toLocaleString('tr-TR')
         });
 
     </script>

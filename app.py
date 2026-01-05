@@ -341,6 +341,11 @@ def sinav_kaydet():
                 db.session.add(sinav_sorusu)
         
         db.session.commit()
+        
+        # Loglama
+        su_an = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
+        print(f"📄 SINAV KAYDEDİLDİ: ID={yeni_sinav.id}, Tarih={su_an}")
+        
         return jsonify({'basarili': True, 'mesaj': 'Sınav başarıyla kaydedildi', 'sinav_id': yeni_sinav.id})
     except Exception as e:
         db.session.rollback()
@@ -379,15 +384,19 @@ def sinav_ayar_guncelle(sinav_id):
 @app.route('/sinav-onizleme/<int:sinav_id>')
 def sinav_onizleme(sinav_id):
     """Sınav kağıdı önizleme"""
-    sinav = SinavKagidi.query.get_or_404(sinav_id)
-    ayarlar = SinavAyarlari.query.first()
-    ayarlar_imza = Ayarlar.query.first()
-    return render_template('sinav_onizleme.html', sinav=sinav, ayarlar=ayarlar, ayarlar_imza=ayarlar_imza)
+    try:
+        sinav = SinavKagidi.query.get_or_404(sinav_id)
+        ayarlar = SinavAyarlari.query.first()
+        ayarlar_imza = Ayarlar.query.first()
+        return render_template('sinav_onizleme.html', sinav=sinav, ayarlar=ayarlar, ayarlar_imza=ayarlar_imza)
+    except Exception as e:
+        import traceback
+        return f"<h3>Önizleme Hatası (500)</h3><p>Hata: {str(e)}</p><pre>{traceback.format_exc()}</pre>", 500
 
 @app.route('/ayarlar')
 def ayarlar():
     """Ayarlar sayfası"""
-    ayarlar = Ayarlar.query.first()
+    ayarlar_obj = Ayarlar.query.first()
     
     # Sayaç Bilgilerini Çek
     istatistik = {
@@ -408,7 +417,6 @@ def ayarlar():
             
     except Exception as e:
         print(f"Sayaç okuma hatası: {e}")
-        # Tablo boşsa veya sqlite_sequence oluşmamışsa hata verebilir veya None döner, sorun değil.
 
     # Yüklenen Dosyaları Listele
     dosyalar_listesi = []
@@ -416,7 +424,7 @@ def ayarlar():
         klasor_yolu = app.config['UPLOAD_FOLDER']
         if os.path.exists(klasor_yolu):
             for dosya_adi in os.listdir(klasor_yolu):
-                if dosya_adi.startswith('.'): continue # Gizli dosyaları atla
+                if dosya_adi.startswith('.'): continue
                 
                 tam_yol = os.path.join(klasor_yolu, dosya_adi)
                 if os.path.isfile(tam_yol):
@@ -431,7 +439,6 @@ def ayarlar():
                         'uzanti': dosya_adi.rsplit('.', 1)[1].lower() if '.' in dosya_adi else ''
                     })
             
-            # Tarihe göre ters sırala (en yeni en üstte)
             dosyalar_listesi.sort(key=lambda x: x['tarih'], reverse=True)
             
     except Exception as e:
@@ -440,7 +447,7 @@ def ayarlar():
     # Hazırlanan Sınavları Çek
     sinavlar = SinavKagidi.query.order_by(SinavKagidi.olusturma_tarihi.desc()).all()
 
-    return render_template('ayarlar.html', ayarlar=ayarlar, istatistik=istatistik, dosyalar=dosyalar_listesi, sinavlar=sinavlar)
+    return render_template('ayarlar.html', ayarlar=ayarlar_obj, istatistik=istatistik, dosyalar=dosyalar_listesi, sinavlar=sinavlar)
 
 @app.route('/sinav-sil/<int:sinav_id>', methods=['DELETE'])
 def sinav_sil(sinav_id):
@@ -590,10 +597,33 @@ def sayac_sifirla():
             
         db.session.commit()
         return jsonify({'basarili': True, 'mesaj': mesaj})
-        
     except Exception as e:
         db.session.rollback()
         return jsonify({'basarili': False, 'mesaj': str(e)}), 500
+        
+@app.route('/sinav-soru-sirala/<int:sinav_id>', methods=['POST'])
+def sinav_soru_sirala(sinav_id):
+    """Sınavdaki soruların sırasını günceller"""
+    try:
+        data = request.json
+        yeni_siralamas = data.get('siralamas', []) # List of {soru_id: X, sira: Y}
+        
+        if not yeni_siralamas:
+            return jsonify({'basarili': False, 'mesaj': 'Sıralama verisi eksik'}), 400
+            
+        for s in yeni_siralamas:
+            soru_id = s.get('soru_id')
+            yeni_sira = s.get('sira')
+            
+            sinav_sorusu = SinavSorusu.query.filter_by(sinav_id=sinav_id, soru_id=soru_id).first()
+            if sinav_sorusu:
+                sinav_sorusu.sira = yeni_sira
+        
+        db.session.commit()
+        return jsonify({'basarili': True, 'mesaj': 'Sıralama güncellendi'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
 
 @app.route('/tarif')
