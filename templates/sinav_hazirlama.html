@@ -17,10 +17,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-3 -mt-8">
 
-    <!-- ÜST PANEL: Seçilen Sorular Dashboard (Yatay) -->
-    <div class="mb-8 no-print col-span-full">
+    <!-- ÜST PANEL: Seçilen Sorular Dashboard (Yatay) - %30 Küçültüldü -->
+    <div class="mb-3 no-print col-span-full" style="zoom: 0.7;">
         <div class="bg-white rounded-2xl shadow-lg border border-slate-200">
             <div class="gradient-warning p-4 text-white flex flex-wrap items-center justify-between gap-4">
                 <h2 class="text-xl font-bold flex items-center gap-2 shrink-0">
@@ -64,9 +64,9 @@
     </div>
 
     <!-- SAĞ PANEL MODÜLÜ BİTİŞİ (Soru Bankası Başlangıcı) -->
-    <div class="lg:col-span-8 space-y-6">
+    <div class="lg:col-span-8 space-y-3">
         <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-            <div class="gradient-primary p-6 text-white flex items-center justify-between">
+            <div class="gradient-primary p-4 text-white flex items-center justify-between">
                 <div>
                     <h1 class="text-2xl font-bold flex items-center gap-3">
                         <i data-lucide="database" class="w-7 h-7"></i>
@@ -78,8 +78,8 @@
             </div>
 
             <!-- Filtreler -->
-            <div class="p-4 bg-slate-50 border-b border-slate-200">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="p-3 bg-slate-50 border-b border-slate-200">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                     <input type="text" id="soruAra" placeholder="Soru ara..."
                         class="px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none transition-all">
                     <select id="konuFiltre"
@@ -110,13 +110,13 @@
             </div>
 
             <!-- Sorular Listesi (Izgara Yapısı) -->
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[800px] overflow-y-auto bg-slate-50/50">
+            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[800px] overflow-y-auto bg-slate-50/50">
                 {% if sorular %}
                 {% for soru in sorular %}
-                <div class="soru-kart border-2 border-slate-200 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all"
+                <div class="soru-kart border-2 border-slate-200 rounded-xl p-3 cursor-pointer hover:shadow-lg transition-all"
                     data-soru-id="{{ soru.id }}" data-soru-konu="{{ soru.konu or '' }}"
                     data-soru-zorluk="{{ soru.zorluk }}" onclick="soruSec({{ soru.id }}, this)">
-                    <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-start justify-between mb-1.5">
                         <div class="flex items-center gap-2">
                             <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
                                 <input type="checkbox" class="soru-checkbox w-4 h-4" data-soru-id="{{ soru.id }}">
@@ -157,7 +157,7 @@
     </div>
 
     <!-- SOL PANEL: Ayarlar ve Butonlar (4 Col - %40 Küçültüldü) -->
-    <div class="lg:col-span-4 space-y-4 lg:sticky lg:top-4 self-start" style="zoom: 0.6;">
+    <div class="lg:col-span-4 space-y-2 lg:sticky lg:top-4 self-start" style="zoom: 0.6;">
 
         <!-- Sınav Bilgileri -->
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -167,7 +167,7 @@
                     Sınav Bilgileri
                 </h2>
             </div>
-            <div class="p-4 space-y-4">
+            <div class="p-3 space-y-2">
                 <!-- 1. Antet Logoları (Kağıdın en üstü) -->
                 <div class="border-b border-slate-200 pb-4">
                     <h3 class="text-sm font-bold text-slate-700 mb-3">Antet Logoları</h3>
@@ -406,27 +406,7 @@
             </div>
         </div>
 
-        <!-- Eylem Butonları -->
-        <div class="bg-white rounded-2xl shadow-lg p-4 space-y-3">
-            <button onclick="sinavKaydet()"
-                class="w-full gradient-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                <i data-lucide="save" class="w-5 h-5 inline mr-2"></i>
-                Sınavı Kaydet
-            </button>
-            <button onclick="sinavOnizle()"
-                class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                <i data-lucide="eye" class="w-5 h-5 inline mr-2"></i>
-                Önizle & PDF
-            </button>
-            <button onclick="yeniSinav()"
-                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-medium transition-all">
-                <i data-lucide="refresh-cw" class="w-5 h-5 inline mr-2"></i>
-                Yeni Sınav
-            </button>
-        </div>
-
-
-
+        <!-- Eylem Butonları sidebar'a taşındı -->
     </div>
 </div>
 
@@ -644,13 +624,18 @@
     document.getElementById('konuFiltre').addEventListener('change', filtrele);
     document.getElementById('zorlukFiltre').addEventListener('change', filtrele);
 
+    function trLower(str) {
+        if (!str) return "";
+        return str.replace(/İ/g, "i").replace(/I/g, "ı").toLocaleLowerCase('tr-TR');
+    }
+
     function filtrele() {
-        const aramaMetni = document.getElementById('soruAra').value.toLowerCase();
+        const aramaMetni = trLower(document.getElementById('soruAra').value);
         const konu = document.getElementById('konuFiltre').value;
         const zorluk = document.getElementById('zorlukFiltre').value;
 
         document.querySelectorAll('.soru-kart').forEach(kart => {
-            const soruMetni = kart.querySelector('p').textContent.toLowerCase();
+            const soruMetni = trLower(kart.querySelector('p').textContent);
             const soruKonu = kart.dataset.soruKonu;
             const soruZorluk = kart.dataset.soruZorluk;
 
@@ -665,6 +650,32 @@
             }
         });
     }
+
+    function konuFiltreleriniDoldur() {
+        const konuSelect = document.getElementById('konuFiltre');
+        const konular = new Set();
+
+        document.querySelectorAll('.soru-kart').forEach(kart => {
+            const konu = kart.dataset.soruKonu;
+            if (konu && konu.trim() !== '') {
+                konular.add(konu);
+            }
+        });
+
+        // Başlığı koru ve konuları ekle
+        konuSelect.innerHTML = '<option value="">Tüm Konular</option>';
+        Array.from(konular).sort().forEach(konu => {
+            const option = document.createElement('option');
+            option.value = konu;
+            option.textContent = konu;
+            konuSelect.appendChild(option);
+        });
+
+        logger.bilgi('Konu filtresi dinamik olarak dolduruldu', { konuSayisi: konular.size });
+    }
+
+    // Sayfa yüklendiğinde konuları algıla
+    document.addEventListener('DOMContentLoaded', konuFiltreleriniDoldur);
 
     setTimeout(() => {
         lucide.createIcons();

@@ -124,6 +124,28 @@
                 <i data-lucide="settings" class="w-5 h-5"></i>
                 <span class="font-medium">Ayarlar</span>
             </a>
+
+            <!-- Sınav Hazırlama Eylem Butonları (Sadece Sınav Hazırlama Sayfasında Görünür) -->
+            {% if request.path == '/sinav-hazirlama' %}
+            <div class="pt-6 mt-6 border-t border-slate-100 space-y-4 px-2">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">Eylemler</p>
+                <button onclick="sinavKaydet()"
+                    class="w-full gradient-primary text-white p-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95">
+                    <i data-lucide="save" class="w-5 h-5"></i>
+                    Sınavı Kaydet
+                </button>
+                <button onclick="sinavOnizle()"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95">
+                    <i data-lucide="eye" class="w-5 h-5"></i>
+                    Önizle & PDF
+                </button>
+                <button onclick="yeniSinav()"
+                    class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                    Yeni Sınav
+                </button>
+            </div>
+            {% endif %}
         </nav>
 
         <!-- Footer -->
