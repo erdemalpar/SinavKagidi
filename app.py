@@ -94,6 +94,35 @@ def soru_sil(soru_id):
         db.session.rollback()
         return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
+@app.route('/api/sorular-json')
+def sorular_json():
+    """Tüm soruları JSON formatında döndürür"""
+    try:
+        sorular = Soru.query.all()
+        soru_listesi = []
+        for soru in sorular:
+            soru_listesi.append({
+                'id': soru.id,
+                'soru_metni': soru.soru_metni,
+                'secenek_a': soru.secenek_a,
+                'secenek_b': soru.secenek_b,
+                'secenek_c': soru.secenek_c,
+                'secenek_d': soru.secenek_d,
+                'secenek_e': soru.secenek_e,
+                'dogru_cevap': soru.dogru_cevap,
+                'konu': soru.konu,
+                'zorluk': soru.zorluk,
+                'puan': soru.puan,
+                'gorsel_yolu': soru.gorsel_yolu,
+                'gorsel_konum': soru.gorsel_konum,
+                'sik_duzeni': soru.sik_duzeni,
+                'soru_tipi': soru.soru_tipi,
+                'olusturma_tarihi': soru.olusturma_tarihi.strftime('%Y-%m-%d %H:%M:%S') if soru.olusturma_tarihi else None
+            })
+        return jsonify(soru_listesi)
+    except Exception as e:
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
 @app.route('/tum-sorulari-sil', methods=['DELETE'])
 def tum_sorulari_sil():
     """Tüm soruları sil"""

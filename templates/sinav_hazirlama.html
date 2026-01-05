@@ -98,14 +98,36 @@
 
             <!-- Toplu İşlemler -->
             <div
-                class="px-6 py-4 flex items-center justify-between border-b border-slate-100 bg-white sticky top-0 z-10">
+                class="px-4 py-3 flex flex-wrap items-center justify-between border-b border-slate-100 bg-white sticky top-0 z-10 gap-4">
                 <div class="flex items-center gap-4">
-                    <label class="flex items-center gap-3 cursor-pointer group select-none">
+                    <label class="flex items-center gap-2 cursor-pointer group select-none">
                         <input type="checkbox" id="tumunuSecCheckbox" class="hidden" onchange="tumunuSecToggle(this)">
+                        <div
+                            class="w-5 h-5 border-2 border-slate-300 rounded flex items-center justify-center group-hover:border-indigo-500 transition-colors bg-white">
+                            <i data-lucide="check"
+                                class="w-3.5 h-3.5 text-indigo-600 opacity-0 group-[.checked]:opacity-100"></i>
+                        </div>
                         <span
-                            class="text-sm font-bold text-slate-600 group-hover:text-indigo-600 transition-colors uppercase tracking-widest">Tümünü
+                            class="text-[11px] font-bold text-slate-500 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">Tümünü
                             Seç</span>
                     </label>
+                </div>
+
+                <!-- Rastgele Soru Seçme Paneli (Yeni Özellik) -->
+                <div class="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <i data-lucide="shuffle" class="w-4 h-4 text-indigo-500 ml-2"></i>
+                    <select id="rastgeleKonu"
+                        class="bg-transparent text-xs font-bold text-slate-700 outline-none border-none focus:ring-0 cursor-pointer min-w-[120px]">
+                        <option value="">Tüm Konulardan</option>
+                    </select>
+                    <div class="h-4 w-px bg-slate-200 mx-1"></div>
+                    <input type="number" id="rastgeleAdet" value="5" min="1" max="20"
+                        class="bg-transparent w-10 text-center text-xs font-bold text-indigo-600 outline-none">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Soru</span>
+                    <button onclick="rastgeleSoruSec()"
+                        class="ml-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5 shadow-sm">
+                        Seç ve Ekle
+                    </button>
                 </div>
             </div>
 
@@ -652,7 +674,7 @@
     }
 
     function konuFiltreleriniDoldur() {
-        const konuSelect = document.getElementById('konuFiltre');
+        const konuSelects = [document.getElementById('konuFiltre'), document.getElementById('rastgeleKonu')];
         const konular = new Set();
 
         document.querySelectorAll('.soru-kart').forEach(kart => {
@@ -662,16 +684,21 @@
             }
         });
 
-        // Başlığı koru ve konuları ekle
-        konuSelect.innerHTML = '<option value="">Tüm Konular</option>';
-        Array.from(konular).sort().forEach(konu => {
-            const option = document.createElement('option');
-            option.value = konu;
-            option.textContent = konu;
-            konuSelect.appendChild(option);
+        const konuListesi = Array.from(konular).sort();
+
+        konuSelects.forEach((select, index) => {
+            if (!select) return;
+            const baslik = index === 0 ? 'Tüm Konular' : 'Tüm Konulardan';
+            select.innerHTML = `<option value="">${baslik}</option>`;
+            konuListesi.forEach(konu => {
+                const option = document.createElement('option');
+                option.value = konu;
+                option.textContent = konu;
+                select.appendChild(option);
+            });
         });
 
-        logger.bilgi('Konu filtresi dinamik olarak dolduruldu', { konuSayisi: konular.size });
+        logger.bilgi('Konu filtreleri (normal ve rastgele) güncellendi', { konuSayisi: konular.size });
     }
 
     // Sayfa yüklendiğinde konuları algıla
@@ -710,6 +737,58 @@
 
         // Label Güncelleme
         checkbox.nextElementSibling.textContent = checked ? 'Tümünü Kaldır' : 'Tümünü Seç';
+
+        // Checkbox görsel durumunu güncelle
+        const wrapper = checkbox.parentElement;
+        if (checked) wrapper.classList.add('checked');
+        else wrapper.classList.remove('checked');
+    }
+
+    function rastgeleSoruSec() {
+        const konu = document.getElementById('rastgeleKonu').value;
+        const adet = parseInt(document.getElementById('rastgeleAdet').value) || 0;
+
+        if (adet <= 0) {
+            toastGoster('Lütfen geçerli bir sayı girin', 'warning');
+            return;
+        }
+
+        // Havuzdaki uygun soruları bul
+        let adaySorular = Array.from(document.querySelectorAll('.soru-kart')).filter(kart => {
+            const soruKonu = kart.dataset.soruKonu;
+            const soruId = parseInt(kart.dataset.soruId);
+            const zatenSecili = secilenSorular.has(soruId);
+
+            if (zatenSecili) return false; // Zaten seçilmişleri ele
+            if (konu === "") return true; // Tüm konulardan
+            return soruKonu === konu; // Sadece seçili konudan
+        });
+
+        if (adaySorular.length === 0) {
+            toastGoster('Seçilebilecek uygun soru bulunamadı', 'info');
+            return;
+        }
+
+        // Karıştır
+        adaySorular.sort(() => Math.random() - 0.5);
+
+        // Seçilecek gerçek adet
+        const secilecekAdet = Math.min(adet, adaySorular.length);
+        const secilenler = adaySorular.slice(0, secilecekAdet);
+
+        // UI'da seç
+        secilenler.forEach(kart => {
+            const soruId = parseInt(kart.dataset.soruId);
+            soruSec(soruId, kart);
+        });
+
+        toastGoster(`${secilecekAdet} adet rastgele soru eklendi`, 'success');
+
+        if (secilecekAdet < adet) {
+            setTimeout(() => {
+                toastGoster(`Not: Havuzda sadece ${secilecekAdet} uygun soru vardı.`, 'info');
+            }, 1000);
+        }
     }
 
 
