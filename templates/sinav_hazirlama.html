@@ -19,92 +19,98 @@
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-    <!-- SOL PANEL: Seçilen Sorular (3 Col) -->
-    <div class="lg:col-span-3 space-y-6 lg:sticky lg:top-4 self-start">
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div class="gradient-warning p-4 text-white">
-                <h2 class="text-xl font-bold flex items-center gap-2">
+    <!-- ÜST PANEL: Seçilen Sorular Dashboard (Yatay) -->
+    <div class="mb-8 no-print col-span-full">
+        <div class="bg-white rounded-2xl shadow-lg border border-slate-200">
+            <div class="gradient-warning p-4 text-white flex flex-wrap items-center justify-between gap-4">
+                <h2 class="text-xl font-bold flex items-center gap-2 shrink-0">
                     <i data-lucide="list-checks" class="w-6 h-6"></i>
                     Seçilen Sorular
                 </h2>
+                <div class="flex items-center gap-4 overflow-x-auto pb-2 sm:pb-0 grow justify-center">
+                    <!-- Dashboard Kartları -->
+                    <div
+                        class="bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-xl flex items-center gap-3 border border-white/10 shrink-0">
+                        <div class="text-[10px] uppercase tracking-wider opacity-90 font-bold">Soru</div>
+                        <div class="text-2xl font-black" id="toplamSoruSayisi">0</div>
+                    </div>
+                    <div
+                        class="bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-xl flex items-center gap-3 border border-white/10 shrink-0">
+                        <div class="text-[10px] uppercase tracking-wider opacity-90 font-bold">Puan</div>
+                        <div class="text-2xl font-black" id="toplamPuan">0</div>
+                    </div>
+                    <div
+                        class="bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-xl flex items-center gap-3 border border-white/10 shrink-0">
+                        <div class="text-[10px] uppercase tracking-wider opacity-90 font-bold">Ortalama</div>
+                        <div class="text-2xl font-black" id="ortalamaPuan">0</div>
+                    </div>
+                    <button onclick="tumSorulariTemizle()"
+                        class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all flex items-center gap-2 border border-white/20 shrink-0">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        Temizle
+                    </button>
+                </div>
             </div>
-            <div class="p-4">
-                <div class="grid grid-cols-3 gap-4 mb-4 text-center">
-                    <div class="bg-blue-50 p-3 rounded-lg">
-                        <p class="text-2xl font-bold text-blue-600" id="toplamSoruSayisi">0</p>
-                        <p class="text-xs text-slate-600">Soru</p>
-                    </div>
-                    <div class="bg-green-50 p-3 rounded-lg">
-                        <p class="text-2xl font-bold text-green-600" id="toplamPuan">0</p>
-                        <p class="text-xs text-slate-600">Puan</p>
-                    </div>
-                    <div class="bg-purple-50 p-3 rounded-lg">
-                        <p class="text-2xl font-bold text-purple-600" id="ortalamaPuan">0</p>
-                        <p class="text-xs text-slate-600">Ort.</p>
-                    </div>
-                </div>
 
-                <div id="secilenSorularListe" class="space-y-2 max-h-[70vh] overflow-y-auto">
-                    <div class="text-center py-8 text-slate-400">
-                        <i data-lucide="mouse-pointer-click" class="w-12 h-12 mx-auto mb-2"></i>
-                        <p class="text-sm">Ortadan soru seçin</p>
-                    </div>
+            <!-- Yatay Soru Listesi (Önizleme) -->
+            <div id="secilenSorularListe"
+                class="p-3 flex gap-2 overflow-x-auto bg-slate-50 border-t border-slate-100 min-h-[90px] items-center">
+                <div class="text-center w-full py-2 text-slate-400 flex items-center justify-center gap-2">
+                    <i data-lucide="mouse-pointer-click" class="w-5 h-5"></i>
+                    <p class="text-sm font-medium">Soru bankasından soru seçerek başlayın</p>
                 </div>
-
-                <button onclick="tumSorulariTemizle()"
-                    class="w-full mt-4 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-all">
-                    <i data-lucide="trash-2" class="w-4 h-4 inline mr-2"></i>
-                    Tümünü Temizle
-                </button>
             </div>
         </div>
     </div>
 
-    <!-- ORTA PANEL: Soru Bankası (6 Col) -->
-    <div class="lg:col-span-6 space-y-6">
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div class="gradient-primary p-6 text-white">
-                <h1 class="text-2xl font-bold flex items-center gap-3">
-                    <i data-lucide="database" class="w-7 h-7"></i>
-                    Soru Bankası
-                </h1>
-                <p class="text-sm opacity-90 mt-1">Eklemek istediğiniz soruları seçin</p>
+    <!-- SAĞ PANEL MODÜLÜ BİTİŞİ (Soru Bankası Başlangıcı) -->
+    <div class="lg:col-span-8 space-y-6">
+        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+            <div class="gradient-primary p-6 text-white flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold flex items-center gap-3">
+                        <i data-lucide="database" class="w-7 h-7"></i>
+                        Soru Bankası
+                    </h1>
+                    <p class="text-sm opacity-90 mt-1">Sınavınıza eklemek istediğiniz soruları buradan seçebilirsiniz
+                    </p>
+                </div>
             </div>
 
             <!-- Filtreler -->
             <div class="p-4 bg-slate-50 border-b border-slate-200">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <input type="text" id="soruAra" placeholder="Soru ara..."
-                        class="px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none">
+                        class="px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none transition-all">
                     <select id="konuFiltre"
-                        class="px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none">
+                        class="px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none transition-all">
                         <option value="">Tüm Konular</option>
                     </select>
                     <select id="zorlukFiltre"
-                        class="px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:outline-none">
+                        class="px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none transition-all">
                         <option value="">Tüm Zorluklar</option>
-                        <option value="Kolay">Kolay</option>
-                        <option value="Orta">Orta</option>
-                        <option value="Zor">Zor</option>
+                        <option value="Kolay">🟢 Kolay</option>
+                        <option value="Orta">🟡 Orta</option>
+                        <option value="Zor">🔴 Zor</option>
                     </select>
                 </div>
             </div>
 
-
             <!-- Toplu İşlemler -->
-            <div class="px-6 pt-4 pb-2 flex items-center justify-between border-b border-gray-100 mb-2">
-                <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Soru Listesi</span>
-                <label
-                    class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600 hover:text-purple-600 select-none bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors">
-                    <input type="checkbox" id="tumunuSecCheckbox"
-                        class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-gray-300"
-                        onchange="tumunuSecToggle(this)">
-                    <span>Tümünü Seç</span>
-                </label>
+            <div
+                class="px-6 py-4 flex items-center justify-between border-b border-slate-100 bg-white sticky top-0 z-10">
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-3 cursor-pointer group select-none">
+                        <input type="checkbox" id="tumunuSecCheckbox" class="hidden" onchange="tumunuSecToggle(this)">
+                        <span
+                            class="text-sm font-bold text-slate-600 group-hover:text-indigo-600 transition-colors uppercase tracking-widest">Tümünü
+                            Seç</span>
+                    </label>
+                </div>
             </div>
 
-            <!-- Sorular Listesi -->
-            <div class="p-6 space-y-4 max-h-[800px] overflow-y-auto">
+            <!-- Sorular Listesi (Izgara Yapısı) -->
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[800px] overflow-y-auto bg-slate-50/50">
                 {% if sorular %}
                 {% for soru in sorular %}
                 <div class="soru-kart border-2 border-slate-200 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all"
@@ -150,8 +156,8 @@
         </div>
     </div>
 
-    <!-- SAĞ PANEL: Ayarlar ve Butonlar (3 Col) -->
-    <div class="lg:col-span-3 space-y-6 lg:sticky lg:top-4 self-start" style="zoom: 0.7;">
+    <!-- SOL PANEL: Ayarlar ve Butonlar (4 Col - %40 Küçültüldü) -->
+    <div class="lg:col-span-4 space-y-4 lg:sticky lg:top-4 self-start" style="zoom: 0.6;">
 
         <!-- Sınav Bilgileri -->
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -449,9 +455,9 @@
 
         if (secilenSorular.size === 0) {
             liste.innerHTML = `
-                <div class="text-center py-8 text-slate-400">
-                    <i data-lucide="mouse-pointer-click" class="w-12 h-12 mx-auto mb-2"></i>
-                    <p class="text-sm">Ortadan soru seçin</p>
+                <div class="text-center w-full py-2 text-slate-400 flex items-center justify-center gap-2">
+                    <i data-lucide="mouse-pointer-click" class="w-5 h-5"></i>
+                    <p class="text-sm font-medium">Soru bankasından soru seçerek başlayın</p>
                 </div>
             `;
             lucide.createIcons();
@@ -461,26 +467,23 @@
         let toplamPuan = 0;
         secilenSorular.forEach((soruId, index) => {
             const soruKart = document.querySelector(`[data-soru-id="${soruId}"]`);
-            const soruMetni = soruKart.querySelector('p').textContent;
-            const puanText = soruKart.querySelector('.bg-orange-100').textContent;
+            if (!soruKart) return; // Filtreleme durumunda DOM'da olmayabilir
+
+            const puanText = soruKart.querySelector('.bg-orange-100')?.textContent || "0";
             const puan = parseInt(puanText);
             toplamPuan += puan;
 
-            const item = document.createElement('div');
-            item.className = 'flex items-center justify-between p-3 bg-slate-50 rounded-lg';
-            item.innerHTML = `
-                <div class="flex items-center gap-2 flex-1">
-                    <span class="w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">${index + 1}</span>
-                    <span class="text-sm text-slate-700 line-clamp-1">#${soruId}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-orange-600">${puan}p</span>
-                    <button onclick="soruCikar(${soruId})" class="text-red-500 hover:text-red-700">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
+            const chip = document.createElement('div');
+            chip.className = 'group flex items-center gap-2 bg-white border border-slate-200 pl-2 pr-1 py-1 rounded-xl shadow-sm hover:border-indigo-300 hover:shadow-md transition-all shrink-0';
+            chip.innerHTML = `
+                <span class="w-5 h-5 rounded-lg bg-indigo-600 text-white text-[10px] flex items-center justify-center font-bold">${index + 1}</span>
+                <span class="text-xs font-bold text-slate-700">#${soruId}</span>
+                <span class="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-bold">${puan}p</span>
+                <button onclick="soruCikar(${soruId})" class="p-1 rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
             `;
-            liste.appendChild(item);
+            liste.appendChild(chip);
         });
 
         // İstatistikleri güncelle
@@ -499,16 +502,29 @@
         }
     }
 
-    function tumSorulariTemizle() {
+    async function tumSorulariTemizle() {
         if (secilenSorular.size === 0) return;
 
-        if (confirm('Tüm seçili soruları temizlemek istediğinizden emin misiniz?')) {
+        const result = await Swal.fire({
+            title: 'Tümünü Temizle?',
+            text: "Seçtiğiniz tüm sorular listeden kaldırılacaktır.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#94a3b8',
+            confirmButtonText: 'Evet, Temizle',
+            cancelButtonText: 'Vazgeç'
+        });
+
+        if (result.isConfirmed) {
             document.querySelectorAll('.soru-secili').forEach(el => {
                 el.classList.remove('soru-secili');
-                el.querySelector('.soru-checkbox').checked = false;
+                const cb = el.querySelector('.soru-checkbox');
+                if (cb) cb.checked = false;
             });
             secilenSorular.clear();
             secilenSorulariGuncelle();
+            toastGoster('Liste temizlendi', 'info');
         }
     }
 
