@@ -153,8 +153,172 @@
 
     /* Sayfa başı olan eleman için ek kurallar */
     .sayfa-basi {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
+
+        /* Slider değeri hem önizlemede itmeyi sağlar hem PDF'de boşluk bırakır */
+        margin-top: {
+                {
+                sinav.sayfa2_ust_bosluk|default(40)
+            }
+        }
+
+        px !important;
+        position: relative;
+        break-before: page;
+        page-break-before: always;
+    }
+
+    /* Önizlemede sayfa bölünme çizgi ayracı */
+    .sayfa-basi::before {
+        content: "";
+        position: absolute;
+        top: -2.5rem;
+        left: -2cm;
+        right: -2cm;
+        border-top: 2px dashed #6366f1;
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
+    /* Sayfa Silme Butonu Stili */
+    .sayfa-sil-btn {
+        position: absolute;
+        top: -3.5rem;
+        right: -1rem;
+        background: #ef4444;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        z-index: 60;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .sayfa-sil-btn:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+
+    .sayfa-basi-label {
+        position: absolute;
+        top: -3.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #6366f1;
+        color: white;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        letter-spacing: 2px;
+        z-index: 55;
+        text-transform: uppercase;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+
+    @media print {
+        .sayfa-basi::before {
+            display: none;
+        }
+    }
+
+    /* Mouse ile konumlandırma ve boşluk ayarı */
+    .spacer-handle {
+        height: 12px;
+        width: 100%;
+        cursor: row-resize;
+        position: absolute;
+        top: -6px;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s, background 0.2s;
+        border-radius: 4px;
+        user-select: none;
+    }
+
+    .soru-blok:hover .spacer-handle {
+        opacity: 1;
+        background: rgba(99, 102, 241, 0.05);
+        /* Çok hafif arka plan */
+    }
+
+    .spacer-handle:active,
+    .spacer-handle.dragging {
+        opacity: 1;
+        background: rgba(99, 102, 241, 0.2);
+    }
+
+    .spacer-handle::after {
+        content: "";
+        width: 100px;
+        height: 4px;
+        background: #6366f1;
+        border-radius: 2px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .soru-blok {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        cursor: default;
+    }
+
+    /* Sortable Dragging Styles */
+    .sortable-ghost {
+        opacity: 0.3;
+        background: #e2e8f0 !important;
+        border: 2px dashed #6366f1 !important;
+    }
+
+    .sortable-drag {
+        opacity: 0.9;
+        cursor: grabbing !important;
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        transform: scale(1.02);
+        background: white;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    /* Sayfa Bölme Modu Stilleri */
+    body.sayfa-bolme-modunda {
+        cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%236366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>'), auto !important;
+    }
+
+    body.sayfa-bolme-modunda .soru-blok {
+        cursor: pointer !important;
+        position: relative;
+    }
+
+    body.sayfa-bolme-modunda .soru-blok:hover {
+        background: rgba(99, 102, 241, 0.1) !important;
+        outline: 2px dashed #6366f1 !important;
+    }
+
+    body.sayfa-bolme-modunda .soru-blok:hover::after {
+        content: "Buradan Yeni Sayfa Başlat";
+        position: absolute;
+        top: -24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #6366f1;
+        color: white;
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        z-index: 100;
+        white-space: nowrap;
     }
 </style>
 {% endblock %}
@@ -207,6 +371,12 @@
                 <span>Soru Sıralamasını Değiştir</span>
             </button>
 
+            <button id="sayfaBolmeBtn" onclick="toggleSayfaBolmeModu()"
+                class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 rounded-lg transition-all text-xs font-bold mt-2">
+                <i data-lucide="scissors" class="w-4 h-4 text-indigo-500"></i>
+                <span>Sayfa Bölme Modu</span>
+            </button>
+
             <button id="sinirBtn" onclick="sayfaSinirlariniGoster(this)"
                 class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg transition-all text-xs font-medium mt-2">
                 <i data-lucide="scan-line" class="w-3.5 h-3.5"></i>
@@ -214,8 +384,12 @@
             </button>
         </div>
 
-        <!-- Kart 2: Görünüm Ayarları -->
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <!-- DIVINE: Görünüm Ayarları Paneli -->
+        <div id="ayarlar-panel-konteynir" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-6">
+            <div class="flex items-center gap-2 mb-2 pb-2 border-b border-slate-50">
+                <i data-lucide="layout-template" class="w-4 h-4 text-indigo-500"></i>
+                <h3 class="font-bold text-xs uppercase tracking-widest text-slate-800">Görünüm Ayarları</h3>
+            </div>
 
             <!-- Görsel -->
             <div class="space-y-3">
@@ -332,6 +506,22 @@
                         value="{{ sinav.imza_alt_bosluk|default(40) }}" oninput="imzaAltBoslukDegistir(this.value)"
                         class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600">
                 </div>
+
+                <!-- Diğer Sayfalar Üst Padding -->
+                <div id="odakli-padding-kontrol"
+                    class="space-y-2 p-3 rounded-lg border-2 border-transparent transition-all">
+                    <div class="flex items-center justify-between text-xs text-slate-600">
+                        <span id="padding-kontrol-baslik" class="font-bold">Genel Sayfa Üst Boşluğu</span>
+                        <span id="sayfa2UstBoslukLabel" class="font-mono text-[10px]">{{
+                            sinav.sayfa2_ust_bosluk|default(40)
+                            }}px</span>
+                    </div>
+                    <input type="range" id="sayfa2UstBoslukSlider" min="0" max="400" step="5"
+                        value="{{ sinav.sayfa2_ust_bosluk|default(40) }}" oninput="odakliPaddingGuncelle(this.value)"
+                        class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                    <p id="padding-kontrol-yardim" class="text-[9px] text-slate-400">Genel veya seçili sayfanın
+                        boşluğunu ayarlar.</p>
+                </div>
             </div>
 
         </div>
@@ -417,26 +607,36 @@
                     {% for sinav_sorusu in sinav.sorular %}
                     {% set soru = sinav_sorusu.soru %}
 
-                    <div class="soru-blok relative group">
-                        <!-- Manuel Sayfa Sonu Kontrolü -->
-                        <div
-                            class="absolute -top-6 left-0 right-0 hidden group-hover:flex justify-center z-10 no-print">
-                            <button onclick="sayfaSonuToggle(this)"
-                                class="bg-slate-800 text-white text-xs px-3 py-1 rounded-full shadow hover:bg-black transition cursor-pointer flex items-center gap-1">
+                    <div class="soru-blok relative group border-2 border-transparent hover:border-indigo-100 rounded-xl transition-all p-2 -m-2"
+                        data-soru-id="{{ sinav_sorusu.soru_id }}"
+                        style="margin-top: {{ sinav_sorusu.ust_bosluk|default(0) }}px;">
+
+                        <!-- Mouse ile Boşluk Ayarı Tutamacı (Resize) -->
+                        <div class="spacer-handle no-print" onmousedown="startSpacerDrag(event, this)"></div>
+
+                        <!-- Doğrudan Sürükle-Bırak Tutamacı -->
+                        <div class="absolute -left-8 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center justify-center p-2 bg-white shadow-sm border border-slate-200 rounded-lg cursor-grab active:cursor-grabbing no-print drag-handle"
+                            title="Soruyu Taşı">
+                            <i data-lucide="grip-vertical" class="w-4 h-4 text-slate-400"></i>
+                        </div>
+
+                        <!-- Manuel Sayfa Sonu Kontrolü (Tamamen sola, tıklama çakışması engellendi) -->
+                        <div class="absolute -top-12 -left-28 hidden group-hover:flex z-[100] no-print">
+                            <button onclick="sayfaSonuToggle(this)" onmousedown="event.stopPropagation()"
+                                class="no-drag bg-indigo-600 text-white text-[9px] px-2.5 py-1.5 rounded-lg shadow-lg hover:bg-indigo-700 transition cursor-pointer flex items-center gap-1 font-bold uppercase tracking-wider border border-white/20 whitespace-nowrap">
                                 <i data-lucide="scissors" class="w-3 h-3"></i>
-                                Yeni Sayfadan Başlat
+                                Yeni Sayfa Başlat
                             </button>
                         </div>
 
-                        <!-- Görsel Gösterge (Ekranda görünür, baskıda gizli) -->
-                        <div
-                            class="sayfa-basi-gosterge hidden items-center justify-center gap-2 py-4 no-print opacity-50">
-                            <div class="h-px bg-red-400 flex-1 border-dashed border-t border-red-400"></div>
-                            <span class="text-xs font-bold text-red-500 uppercase">Yeni Sayfa</span>
-                            <div class="h-px bg-red-400 flex-1 border-dashed border-t border-red-400"></div>
-                        </div>
+                        <!-- Sayfa Silme İkonu (Burada her zaman erişilebilir yaptık) -->
+                        <button onclick="sayfaSil(this)"
+                            class="sayfa-sil-onay-btn absolute -top-4 -right-4 bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-all z-50 no-print flex items-center justify-center {{ 'hidden' if not 'sayfa-basi' in sinav_sorusu.ust_bosluk_stili else '' }}">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
 
-                        <div class="flex items-start gap-4">
+
+                        <div class="flex items-start gap-4" onclick="soruOdakla(this.parentElement)">
                             <!-- Soru Numarası -->
                             <div class="flex-shrink-0 pt-1">
                                 <span
@@ -1001,6 +1201,263 @@
                 }
                 ayarKaydet('imza_alt_bosluk', val);
             }
+
+            let odakliSoruId = null;
+
+            function soruOdakla(el) {
+                // Önceki odağı temizle
+                document.querySelectorAll('.sayfa-odakli').forEach(item => item.classList.remove('sayfa-odakli'));
+
+                // Yeni odak ekle
+                el.classList.add('sayfa-odakli');
+                odakliSoruId = el.getAttribute('data-soru-id');
+
+                // Kontrol panelini güncelle
+                const panel = document.getElementById('odakli-padding-kontrol');
+                const baslik = document.getElementById('padding-kontrol-baslik');
+                const slider = document.getElementById('sayfa2UstBoslukSlider');
+                const currentMargin = parseInt(window.getComputedStyle(el).marginTop);
+
+                panel.classList.add('border-indigo-400', 'bg-indigo-50/30');
+                baslik.innerText = `Soru ${el.querySelector('.sira-no')?.innerText || ''} Üst Boşluğu`;
+                slider.value = currentMargin;
+                document.getElementById('sayfa2UstBoslukLabel').innerText = currentMargin + 'px';
+
+                toastGoster('Sayfa/Soru ayarları aktif', 'info');
+            }
+
+            function odakliPaddingGuncelle(val) {
+                document.getElementById('sayfa2UstBoslukLabel').textContent = val + 'px';
+
+                if (odakliSoruId) {
+                    // Sadece seçili soruya uygula
+                    const el = document.querySelector(`.soru-blok[data-soru-id="${odakliSoruId}"]`);
+                    if (el) {
+                        el.style.marginTop = val + 'px';
+                        // Backend'e kaydet (Debounced olmalıydı ama doğrudan atalım şimdilik)
+                        fetch(`/sinav-soru-bosluk-guncelle/{{ sinav.id }}/${odakliSoruId}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ust_bosluk: parseInt(val) })
+                        });
+                    }
+                } else {
+                    // Global sayfa2üstbosluk olarak çalış (Geleneksel davranış)
+                    const sayfaBaslari = document.querySelectorAll('.sayfa-basi');
+                    sayfaBaslari.forEach(el => {
+                        el.style.marginTop = val + 'px';
+                    });
+                    ayarKaydet('sayfa2_ust_bosluk', val);
+                }
+            }
+
+            // Sayfanın boş bir yerine tıklanınca odağı sıfırla
+            document.getElementById('sinavKagidi').addEventListener('click', (e) => {
+                if (e.target.id === 'sinavKagidi' || e.target.classList.contains('a4-sayfa')) {
+                    document.querySelectorAll('.sayfa-odakli').forEach(item => item.classList.remove('sayfa-odakli'));
+                    odakliSoruId = null;
+
+                    const panel = document.getElementById('odakli-padding-kontrol');
+                    const baslik = document.getElementById('padding-kontrol-baslik');
+                    panel.classList.remove('border-indigo-400', 'bg-indigo-50/30');
+                    baslik.innerText = "Genel Sayfa Üst Boşluğu";
+                }
+            });
+
+            function sayfa2UstBoslukDegistir(val) {
+                // Bu artık odakliPaddingGuncelle tarafından karşılanıyor
+                odakliPaddingGuncelle(val);
+            }
+
+            // SAYFA BÖLME MODU 
+            let sayfaBolmeModu = false;
+
+            function toggleSayfaBolmeModu() {
+                sayfaBolmeModu = !sayfaBolmeModu;
+                const btn = document.getElementById('sayfaBolmeBtn');
+
+                if (sayfaBolmeModu) {
+                    document.body.classList.add('sayfa-bolme-modunda');
+                    btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+                    btn.classList.remove('bg-white', 'text-slate-600');
+                    toastGoster('Sayfa Bölme Modu Aktif. Bölmek istediğiniz sorunun üzerine tıklayın.', 'info');
+                } else {
+                    document.body.classList.remove('sayfa-bolme-modunda');
+                    btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                    btn.classList.add('bg-white', 'text-slate-600');
+                    toastGoster('Sayfa Bölme Modu Kapatıldı.', 'info');
+                }
+            }
+
+            // Soru bloklarına tıklama olayını ekle
+            document.addEventListener('click', (e) => {
+                if (!sayfaBolmeModu) return;
+
+                const soruBlok = e.target.closest('.soru-blok');
+                if (soruBlok) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    soruBlok.classList.toggle('sayfa-basi');
+                    const silBtn = soruBlok.querySelector('.sayfa-sil-onay-btn');
+
+                    if (soruBlok.classList.contains('sayfa-basi')) {
+                        if (silBtn) silBtn.classList.remove('hidden');
+                        toastGoster('Yeni sayfa başlatıldı.', 'success');
+                    } else {
+                        if (silBtn) silBtn.classList.add('hidden');
+                        toastGoster('Sayfa bölümü kaldırıldı.', 'info');
+                    }
+
+                    // Refresh boundaries if open
+                    const sinirBtn = document.getElementById('sinirBtn');
+                    if (sinirBtn && document.getElementById('kilavuz-katmani')) {
+                        sayfaSinirlariniGoster(sinirBtn);
+                        sayfaSinirlariniGoster(sinirBtn);
+                    }
+
+                    setTimeout(() => lucide.createIcons(), 50);
+                }
+            }, true); // Use capture to intercept before other events
+
+            function sayfaSil(btn) {
+                const soruBlok = btn.closest('.soru-blok');
+                soruBlok.classList.remove('sayfa-basi');
+                btn.classList.add('hidden');
+
+                // Kılavuz katmanını güncelle
+                const sinirBtn = document.getElementById('sinirBtn');
+                if (sinirBtn && document.getElementById('kilavuz-katmani')) {
+                    sayfaSinirlariniGoster(sinirBtn);
+                    sayfaSinirlariniGoster(sinirBtn);
+                }
+
+                toastGoster('Sayfa bölümü kaldırıldı', 'success');
+            }
+
+            function sayfaSonuToggle(btn) {
+                const soruBlok = btn.closest('.soru-blok');
+                soruBlok.classList.toggle('sayfa-basi');
+                const silBtn = soruBlok.querySelector('.sayfa-sil-onay-btn');
+
+                if (soruBlok.classList.contains('sayfa-basi')) {
+                    if (silBtn) silBtn.classList.remove('hidden');
+                    toastGoster('Soru yeni sayfadan başlayacak', 'info');
+                } else {
+                    if (silBtn) silBtn.classList.add('hidden');
+                }
+
+                // Kılavuz katmanını güncelle
+                const sinirBtn = document.getElementById('sinirBtn');
+                if (sinirBtn && document.getElementById('kilavuz-katmani')) {
+                    // Kapat-aç yaparak refresh et
+                    sayfaSinirlariniGoster(sinirBtn);
+                    sayfaSinirlariniGoster(sinirBtn);
+                }
+
+                setTimeout(() => lucide.createIcons(), 50);
+            }
+
+            function sayfaSil(btn) {
+                const soruBlok = btn.closest('.soru-blok');
+                soruBlok.classList.remove('sayfa-basi');
+                btn.classList.add('hidden');
+
+                // Kılavuz katmanını güncelle
+                const sinirBtn = document.getElementById('sinirBtn');
+                if (sinirBtn && document.getElementById('kilavuz-katmani')) {
+                    sayfaSinirlariniGoster(sinirBtn);
+                    sayfaSinirlariniGoster(sinirBtn);
+                }
+
+                toastGoster('Sayfa bölümü kaldırıldı', 'success');
+            }
+
+            // Mouse ile Boşluk Ayarı (Dragging)
+            let currentDraggingHandle = null;
+            let startY = 0;
+            let startMarginTop = 0;
+
+            function startSpacerDrag(e, handle) {
+                e.preventDefault();
+                currentDraggingHandle = handle;
+                startY = e.clientY;
+                const soruBlok = handle.closest('.soru-blok');
+                startMarginTop = parseInt(window.getComputedStyle(soruBlok).marginTop);
+
+                handle.classList.add('dragging');
+                document.addEventListener('mousemove', onSpacerDrag);
+                document.addEventListener('mouseup', stopSpacerDrag);
+
+                // Seçimi engelle
+                document.body.style.userSelect = 'none';
+            }
+
+            function onSpacerDrag(e) {
+                if (!currentDraggingHandle) return;
+                const deltaY = e.clientY - startY;
+                const soruBlok = currentDraggingHandle.closest('.soru-blok');
+                let newMarginTop = Math.max(0, startMarginTop + deltaY);
+                soruBlok.style.marginTop = newMarginTop + 'px';
+            }
+
+            function stopSpacerDrag() {
+                if (currentDraggingHandle) {
+                    const soruBlok = currentDraggingHandle.closest('.soru-blok');
+                    const soruId = soruBlok.getAttribute('data-soru-id');
+                    const newMargin = parseInt(soruBlok.style.marginTop);
+
+                    // Backend'e kaydet
+                    fetch(`/sinav-soru-bosluk-guncelle/{{ sinav.id }}/${soruId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ust_bosluk: newMargin })
+                    });
+
+                    currentDraggingHandle.classList.remove('dragging');
+                }
+                currentDraggingHandle = null;
+                document.removeEventListener('mousemove', onSpacerDrag);
+                document.removeEventListener('mouseup', stopSpacerDrag);
+                document.body.style.userSelect = 'auto';
+            }
+
+            // Sayfa açıldığında SortableJS'i ana kağıt için de aktif et
+            document.addEventListener('DOMContentLoaded', () => {
+                const el = document.getElementById('sorularContainer');
+                if (el) {
+                    Sortable.create(el, {
+                        animation: 150,
+                        handle: '.drag-handle',
+                        filter: '.no-drag', // no-drag sınıfı olan elemanlarda sürüklemeyi kapat
+                        preventOnFilter: false, // Filtreye takılan elemanlarda tıklamaya izin ver
+                        ghostClass: 'sortable-ghost',
+                        dragClass: 'sortable-drag',
+                        onEnd: function () {
+                            const siralamas = [];
+                            document.querySelectorAll('#sorularContainer > .soru-blok').forEach((el, index) => {
+                                siralamas.push({
+                                    soru_id: el.getAttribute('data-soru-id'),
+                                    sira: index + 1
+                                });
+                            });
+
+                            // Yeni sıralamayı kaydet
+                            fetch(`/sinav-soru-sirala/{{ sinav.id }}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ siralamas: siralamas })
+                            }).then(res => res.json()).then(data => {
+                                if (data.basarili) {
+                                    // Sayfayı yenileyerek numaraları ve page-breakleri düzeltebiliriz 
+                                    // ya da JS ile numaraları güncelleyebiliriz (şimdilik yenileyelim)
+                                    location.reload();
+                                }
+                            });
+                        }
+                    });
+                }
+            });
         </script>
 
         <!-- Soru Sıralama Modalı -->

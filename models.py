@@ -119,6 +119,7 @@ class SinavKagidi(db.Model):
     baslik_katsayisi = db.Column(db.Integer, default=100) # Header Scale Factor (%)
     imza_metni = db.Column(db.String(200), default='Öğr.Gör.Erdem ALPAR')
     imza_alt_bosluk = db.Column(db.Integer, default=40)
+    sayfa2_ust_bosluk = db.Column(db.Integer, default=40)
     
     olusturma_tarihi = db.Column(db.DateTime, default=datetime.datetime.now)
     guncelleme_tarihi = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
@@ -150,6 +151,7 @@ class SinavSorusu(db.Model):
     soru_id = db.Column(db.Integer, db.ForeignKey('sorular.id'), nullable=False)
     sira = db.Column(db.Integer, default=1)  # Sorunun sınav kağıdındaki sırası
     ozel_puan = db.Column(db.Integer)  # Bu sınav için özel puan (opsiyonel)
+    ust_bosluk = db.Column(db.Integer, default=0) # Soruya özel üst boşluk (pixel)
     
     # İlişkiler
     sinav = db.relationship('SinavKagidi', back_populates='sorular')

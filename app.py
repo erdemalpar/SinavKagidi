@@ -625,6 +625,23 @@ def sinav_soru_sirala(sinav_id):
         db.session.rollback()
         return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
+@app.route('/sinav-soru-bosluk-guncelle/<int:sinav_id>/<int:soru_id>', methods=['POST'])
+def sinav_soru_bosluk_guncelle(sinav_id, soru_id):
+    """Bir sorunun üst boşluğunu günceller"""
+    try:
+        data = request.json
+        ust_bosluk = data.get('ust_bosluk', 0)
+        
+        sinav_sorusu = SinavSorusu.query.filter_by(sinav_id=sinav_id, soru_id=soru_id).first()
+        if sinav_sorusu:
+            sinav_sorusu.ust_bosluk = int(ust_bosluk)
+            db.session.commit()
+            return jsonify({'basarili': True})
+        return jsonify({'basarili': False, 'mesaj': 'Soru bulunamadı'}), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
 
 @app.route('/tarif')
 def tarif():
