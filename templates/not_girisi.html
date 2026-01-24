@@ -1,0 +1,1333 @@
+{% extends "base.html" %}
+
+{% block title %}Not Girişi - Sınav Kağıdı Hazırlama{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .sinif-card {
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+  }
+
+  .sinif-card:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+  }
+
+  .sinif-card.active {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  }
+
+  .sort-btn {
+    cursor: pointer;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+  }
+
+  .sort-btn:hover,
+  .sort-btn.active {
+    opacity: 1;
+  }
+
+  .grade-input {
+    width: 70px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px;
+  }
+
+  .grade-input:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  /* Sayfayı tam genişlik yap */
+  #mainContent>div {
+    max-width: 100% !important;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-12 gap-6">
+  <!-- SOL PANEL -->
+  <div class="col-span-3">
+    <div class="bg-white rounded-xl shadow-sm border p-4 sticky top-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-lg">Sınıflarım</h3>
+        <button onclick="yeniSinifModal()" class="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Öğretim Yılı -->
+      <div class="mb-4">
+        <label class="text-xs font-semibold text-slate-500 mb-2 block">ÖĞRETİM YILI</label>
+        <select id="ogretimYiliSelect" onchange="yilDegistir()" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="2025-2026">2025-2026</option>
+          <option value="2024-2025">2024-2025</option>
+        </select>
+      </div>
+
+      <div id="sinifListesi" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- SAĞ PANEL -->
+  <div class="col-span-9">
+    <div id="sinifDetay"></div>
+  </div>
+</div>
+
+<!-- Modaller -->
+<div id="yeniSinifModalDiv" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+  <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl border">
+    <h3 id="modalTitle" class="text-xl font-black text-slate-800 mb-6">Yeni Sınıf Ekle</h3>
+    <div class="space-y-3">
+      <input type="text" id="inputDersKodu" placeholder="Ders Kodu (TAPU303)"
+        class="w-full border rounded-lg px-3 py-2">
+      <input type="text" id="inputDersAdi" placeholder="Ders Adı" class="w-full border rounded-lg px-3 py-2">
+      <input type="text" id="inputSube" placeholder="Şube (1)" class="w-full border rounded-lg px-3 py-2">
+      <div class="flex gap-2 pt-2">
+        <button onclick="modalKapat()" class="flex-1 bg-slate-200 py-2 rounded-lg font-semibold">İptal</button>
+        <button onclick="sinifKaydet()"
+          class="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-semibold">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Soru Seçim Modalı -->
+<div id="soruSecimModal"
+  class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div class="p-6 border-b flex items-center justify-between gradient-primary text-white">
+      <h3 class="text-xl font-bold">Soru Bankasından Seç</h3>
+      <button onclick="soruSecimKapat()" class="p-2 hover:bg-white/20 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div class="p-6 overflow-y-auto flex-1 bg-slate-50">
+      <div id="soruBankasiListesi" class="space-y-4">
+        <div class="text-center p-8 text-slate-400">Sorular yükleniyor...</div>
+      </div>
+    </div>
+    <div class="p-6 border-t flex justify-between items-center bg-white">
+      <span id="secilenSoruOzet" class="text-sm font-semibold text-slate-600">0 soru seçildi</span>
+      <div class="flex gap-2">
+        <button onclick="soruSecimKapat()"
+          class="px-6 py-2 rounded-lg font-semibold text-slate-600 hover:bg-slate-100">İptal</button>
+        <button onclick="soruSecimOnayla()"
+          class="px-8 py-2 rounded-lg font-semibold gradient-primary text-white shadow-lg shadow-indigo-200">Seçilenleri
+          Ekle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Öğrenci Puan Giriş Modalı -->
+<div id="puanGirisModal"
+  class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="p-6 border-b flex items-center justify-between bg-emerald-600 text-white">
+      <div>
+        <h3 id="puanGirisOgrenciAd" class="text-xl font-bold">Öğrenci Adı</h3>
+        <p id="puanGirisSinavTip" class="text-xs opacity-80 uppercase tracking-widest font-bold mt-1">VİZE NOT GİRİŞİ
+        </p>
+      </div>
+      <button onclick="puanGirisKapat()" class="p-2 hover:bg-white/20 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div class="p-6 overflow-y-auto flex-1 bg-slate-50">
+      <div id="puanGirisSoruListesi" class="space-y-4">
+        <!-- Sorular buraya gelecek -->
+      </div>
+    </div>
+    <div class="p-6 border-t flex justify-between items-center bg-white">
+      <div class="text-right">
+        <span class="text-sm text-slate-500 block uppercase font-bold text-[10px]">Toplam Puan</span>
+        <span id="puanGirisToplam" class="text-2xl font-black text-emerald-600">0</span>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="puanGirisKapat()"
+          class="px-6 py-2 rounded-lg font-semibold text-slate-600 hover:bg-slate-100">İptal</button>
+        <button onclick="puanGirisKaydet()"
+          class="px-8 py-2 rounded-lg font-semibold bg-emerald-600 text-white shadow-lg shadow-emerald-200">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".xlsx,.xls,.json" class="hidden" onchange="dosyaSecildi(event)">
+<input type="file" id="analizFileInput" accept=".xlsx,.xls,.json" class="hidden" onchange="analizDosyasiSecildi(event)">
+<input type="file" id="sinavSorusuInput" accept=".xlsx,.xls,.json,.pdf" class="hidden"
+  onchange="sinavSorusuSecildi(event)">
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  let yil = '2025-2026';
+  let aktifSinif = null;
+  let siniflar = {};
+  let siralamaYonu = { kolon: null, yon: 'asc' };
+  let aktifKolon = 'vize'; // vize, final, but
+  let aramaMetni = ''; // Tablo araması için
+  let duzenlenenSinifId = null; // Düzenleme modu için
+
+  function veriYukle() {
+    const saved = localStorage.getItem('notGirisSistemi');
+    if (saved) {
+      siniflar = JSON.parse(saved);
+    } else {
+      siniflar = {
+        '2025-2026': [
+          { id: '1', kod: 'TAPU229', ad: 'TAPU VE KADASTRO İŞLEMLERİNDE DİJİTAL UYGULAMALAR (SEÇMELİ)', sube: '1', ogrenciler: [], analizler: [] },
+          { id: '2', kod: 'TAPU303', ad: 'TAPU VE KADASTRO BİLGİ SİSTEMİ I (TAKBİS)', sube: '1', ogrenciler: [], analizler: [] },
+          { id: '3', kod: 'TKY-415', ad: 'TAPU KADASTRO BİLGİ İŞLEM SİSTEMİ I (TAKBİS)', sube: '1', ogrenciler: [], analizler: [] }
+        ]
+      };
+    }
+  }
+
+  function veriKaydet() {
+    localStorage.setItem('notGirisSistemi', JSON.stringify(siniflar));
+  }
+
+  function sinifListesiniGoster() {
+    const liste = document.getElementById('sinifListesi');
+    const mevcutlar = siniflar[yil] || [];
+
+    if (mevcutlar.length === 0) {
+      liste.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Henüz sınıf yok</p>';
+      return;
+    }
+
+    liste.innerHTML = mevcutlar.map(s => `
+        <div onclick="sinifSec('${s.id}')" class="sinif-card ${aktifSinif?.id === s.id ? 'active' : ''} bg-white border rounded-lg p-3">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="font-bold text-sm">${s.kod}</div>
+                    <div class="text-xs text-slate-500 mt-1 line-clamp-2">${s.ad}</div>
+                    <div class="text-xs text-indigo-600 font-semibold mt-1">Şube: ${s.sube}</div>
+                    <div class="text-xs text-slate-400 mt-1">${s.ogrenciler.length} öğrenci</div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <button onclick="event.stopPropagation(); sinifDuzenlemeAc('${s.id}')" class="p-1 text-slate-400 hover:text-blue-500 transition-colors" title="Düzenle">
+                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); sinifSil('${s.id}')" class="p-1 text-slate-400 hover:text-red-500 transition-colors" title="Sil">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    lucide.createIcons();
+  }
+
+  function sinifSec(id) {
+    const mevcutlar = siniflar[yil] || [];
+    aktifSinif = mevcutlar.find(s => s.id === id);
+    sinifListesiniGoster();
+    sinifDetayGoster();
+  }
+
+  function sinifDetayGoster(kolon = aktifKolon) {
+    const alan = document.getElementById('sinifDetay');
+
+    if (!aktifSinif) {
+      alan.innerHTML = `
+            <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+                <i data-lucide="inbox" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-700 mb-2">Sınıf Seçilmedi</h3>
+                <p class="text-slate-500">Sol taraftan bir sınıf seçin</p>
+            </div>
+        `;
+      lucide.createIcons();
+      return;
+    }
+
+    alan.innerHTML = `
+        <!-- Header & Aksiyonlar -->
+        <div class="bg-white rounded-xl shadow-sm border mb-4 p-6 overflow-hidden">
+            <div class="flex flex-col gap-6">
+                <!-- Üst Satır: Sınıf Bilgisi -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800 tracking-tight">${aktifSinif.kod} - ${aktifSinif.sube}</h2>
+                        <p class="text-slate-500 font-medium mt-1">${aktifSinif.ad}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                         <div class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl font-bold text-sm border border-indigo-100 flex items-center gap-2">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            ${aktifSinif.ogrenciler.length} Öğrenci
+                         </div>
+                    </div>
+                </div>
+
+                <!-- Alt Satır: Butonlar -->
+                <div class="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-50">
+                    <button onclick="excelYukle()" class="flex-1 min-w-[140px] bg-white text-slate-700 border-2 border-slate-100 p-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all group shrink-0">
+                        <i data-lucide="upload" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        Not Yükle
+                    </button>
+                    
+                    <button onclick="sinavSorusuYukle()" class="flex-1 min-w-[140px] bg-white text-slate-700 border-2 border-slate-100 p-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:border-violet-500 hover:text-violet-600 hover:bg-violet-50 transition-all group shrink-0">
+                        <i data-lucide="file-question" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        Sınav Sorusu
+                    </button>
+
+                    <button onclick="analizAc()" class="flex-1 min-w-[140px] bg-white text-slate-700 border-2 border-slate-100 p-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50 transition-all group shrink-0">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        Analiz Ekranı
+                    </button>
+
+                    <button onclick="indirSecimAc()" class="flex-1 min-w-[140px] bg-white text-slate-700 border-2 border-slate-100 p-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all group shrink-0">
+                        <i data-lucide="download" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        Dışa Aktar
+                    </button>
+
+                    <button onclick="tumTabloyuSil()" class="flex-1 min-w-[140px] bg-white text-slate-700 border-2 border-slate-100 p-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:border-red-500 hover:text-red-600 hover:bg-red-50 transition-all group shrink-0">
+                        <i data-lucide="trash-2" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        Tabloyu Temizle
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Arama ve Kolon Seçimi -->
+        <div class="flex flex-col md:flex-row gap-4 mb-4">
+            <!-- Kolon Seçim Butonları -->
+            <div class="bg-white rounded-xl shadow-sm border p-4 flex-1">
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-semibold text-slate-600">Yüklenecek Kolon:</span>
+                    <div class="flex gap-2">
+                        <button onclick="kolonSec('vize')" id="btnVize" class="px-6 py-2 rounded-lg font-semibold transition-all ${kolon === 'vize' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                            Vize
+                        </button>
+                        <button onclick="kolonSec('final')" id="btnFinal" class="px-6 py-2 rounded-lg font-semibold transition-all ${kolon === 'final' ? 'bg-rose-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                            Final
+                        </button>
+                        <button onclick="kolonSec('but')" id="btnBut" class="px-6 py-2 rounded-lg font-semibold transition-all ${kolon === 'but' ? 'bg-orange-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                            Bütünleme
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arama Kutusu -->
+            <div class="bg-white rounded-xl shadow-sm border p-4 w-full md:w-80">
+                <div class="relative group">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                    <input type="text" id="tabloAramaInput" oninput="tabloAra(this.value)" value="${aramaMetni}"
+                        placeholder="Öğrenci adı veya no ile ara..." 
+                        class="w-full pl-10 pr-4 py-2 bg-slate-50 border-2 border-slate-100 rounded-lg text-sm font-medium focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50 transition-all outline-none">
+                </div>
+            </div>
+        </div>
+
+        <!-- Tablo -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 border-b">
+                        <tr class="text-xs uppercase text-slate-600">
+                            <th class="p-3 text-center w-16">#</th>
+                            <th class="p-3 text-left">
+                                <div class="flex items-center gap-1">
+                                    ÖĞRENCİ ADI
+                                    <button onclick="sirala('ad')" class="sort-btn">
+                                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </th>
+                            <th class="p-3 text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    ÖĞRENCİ NO
+                                    <button onclick="sirala('ogrenci_no')" class="sort-btn">
+                                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </th>
+                            <th class="p-3 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    VİZE
+                                    <button onclick="sirala('vize')" class="sort-btn">
+                                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                                    </button>
+                                    <button onclick="kolonTemizle('vize')" class="text-red-500 hover:bg-red-50 p-1 rounded" title="Vize notlarını temizle">
+                                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </th>
+                            <th class="p-3 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    FİNAL
+                                    <button onclick="sirala('final')" class="sort-btn">
+                                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                                    </button>
+                                    <button onclick="kolonTemizle('final')" class="text-red-500 hover:bg-red-50 p-1 rounded" title="Final notlarını temizle">
+                                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </th>
+                            <th class="p-3 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    BÜT
+                                    <button onclick="sirala('but')" class="sort-btn">
+                                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                                    </button>
+                                    <button onclick="kolonTemizle('but')" class="text-red-500 hover:bg-red-50 p-1 rounded" title="Bütünleme notlarını temizle">
+                                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </th>
+                            <th class="p-3 text-center font-bold">ORTALAMA</th>
+                            <th class="p-3 text-center font-bold">DURUM</th>
+                            <th class="p-3 text-center font-bold">
+                                <div class="flex items-center justify-center gap-1">
+                                    SORU PUANI
+                                    <button onclick="sirala('soru_puani')" class="sort-btn">
+                                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </th>
+                            <th class="p-3 text-center w-16">İŞLEM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${ogrenciSatirlari(kolon)}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-4 flex flex-col gap-6">
+            <button onclick="yeniOgrenci()" class="w-fit bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+                <i data-lucide="user-plus" class="w-5 h-5"></i>
+                Yeni Öğrenci Ekle
+            </button>
+
+            <!-- Yüklenen Dosyalar Paneli -->
+            <div id="yuklenenDosyalarPanel" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b flex items-center justify-between">
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                        <i data-lucide="files" class="w-5 h-5 text-indigo-500"></i>
+                        Yüklenen Dosyalar (<span class="uppercase">${kolon}</span>)
+                    </h3>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sınav Tipine Göre Listelenir</span>
+                </div>
+                <div id="dosyaListesiContainer" class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <!-- Dosyalar buraya gelecek -->
+                </div>
+            </div>
+        </div>
+    `;
+    yuklenenDosyalariGoster();
+    lucide.createIcons();
+  }
+
+  function ogrenciSatirlari(kolon = aktifKolon) {
+    if (!aktifSinif.ogrenciler || aktifSinif.ogrenciler.length === 0) {
+      return '<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">Henüz öğrenci yok. Excel yükleyin veya manuel ekleyin.</td></tr>';
+    }
+
+    let liste = [...aktifSinif.ogrenciler];
+
+    // Arama Filtresi (Türkçe Karakter Duyarlı)
+    if (aramaMetni) {
+      const query = aramaMetni.toLocaleLowerCase('tr-TR');
+      liste = liste.filter(o =>
+        (o.ad || '').toLocaleLowerCase('tr-TR').includes(query) ||
+        (o.ogrenci_no || '').toLocaleLowerCase('tr-TR').includes(query)
+      );
+    }
+
+    if (aramaMetni && liste.length === 0) {
+      return `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-medium">"${aramaMetni}" ile eşleşen öğrenci bulunamadı.</td></tr>`;
+    }
+
+    // Sıralama
+    if (siralamaYonu.kolon) {
+      liste.sort((a, b) => {
+        let aVal, bVal;
+
+        if (siralamaYonu.kolon === 'soru_puani') {
+          // Puan girilme durumuna göre sırala (true > false)
+          aVal = (a.soruNotlari && a.soruNotlari[kolon] && Object.keys(a.soruNotlari[kolon]).length > 0) ? 1 : 0;
+          bVal = (b.soruNotlari && b.soruNotlari[kolon] && Object.keys(b.soruNotlari[kolon]).length > 0) ? 1 : 0;
+        } else if (siralamaYonu.kolon === 'ortalama') {
+          aVal = ortHesapla(a) || -1;
+          bVal = ortHesapla(b) || -1;
+        } else if (['vize', 'final', 'but'].includes(siralamaYonu.kolon)) {
+          aVal = parseFloat(a[siralamaYonu.kolon]) || -1;
+          bVal = parseFloat(b[siralamaYonu.kolon]) || -1;
+        } else {
+          aVal = String(a[siralamaYonu.kolon] || '').toLocaleLowerCase('tr-TR');
+          bVal = String(b[siralamaYonu.kolon] || '').toLocaleLowerCase('tr-TR');
+        }
+
+        if (aVal === bVal) return 0;
+        return siralamaYonu.yon === 'asc'
+          ? (aVal > bVal ? 1 : -1)
+          : (aVal < bVal ? 1 : -1);
+      });
+    }
+
+    return liste.map((ogr, idx) => {
+      const ort = ortHesapla(ogr);
+      const durum = ort >= 60 ? 'geçti' : 'kaldı';
+      const butHedef = ort < 60 ? Math.ceil((60 - (parseFloat(ogr.vize || 0) * 0.4)) / 0.6) : 0;
+
+      return `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-3 text-center text-slate-400 font-mono text-sm font-bold">${idx + 1}</td>
+                <td class="p-3">
+                    <input type="text" value="${ogr.ad || ''}" onchange="alanGuncelle(${ogr.idx}, 'ad', this.value)" 
+                        class="w-full border-0 outline-none font-medium" placeholder="Öğrenci adı">
+                </td>
+                <td class="p-3 text-center">
+                    <input type="text" value="${ogr.ogrenci_no || ''}" onchange="alanGuncelle(${ogr.idx}, 'ogrenci_no', this.value)" 
+                        class="w-32 border rounded px-2 py-1 text-center text-sm font-mono" placeholder="20XXXXXXXX">
+                </td>
+                <td class="p-3 text-center">
+                    <input type="number" value="${ogr.vize || ''}" onchange="alanGuncelle(${ogr.idx}, 'vize', this.value)" 
+                        class="grade-input" min="0" max="100">
+                </td>
+                <td class="p-3 text-center">
+                    <input type="number" value="${ogr.final || ''}" onchange="alanGuncelle(${ogr.idx}, 'final', this.value)" 
+                        class="grade-input" min="0" max="100">
+                </td>
+                <td class="p-3 text-center">
+                    <input type="number" value="${ogr.but || ''}" onchange="alanGuncelle(${ogr.idx}, 'but', this.value)" 
+                        class="grade-input" min="0" max="100">
+                </td>
+                <td class="p-3 text-center font-mono font-bold ${ort >= 60 ? 'text-green-600' : 'text-red-600'}">
+                    ${ort ? ort.toFixed(2) : '0.00'}
+                </td>
+                <td class="p-3 text-center">
+                    ${ort ? `<span class="px-3 py-1 rounded-full text-xs font-bold ${ort >= 60 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${ort >= 60 ? 'GEÇTİ' : 'KALDI'}</span>` : '-'}
+                </td>
+                <td class="p-3 text-center">
+                    <button onclick="puanGirisAc(${ogr.idx})" 
+                        class="p-2 ${ogr.soruNotlari && ogr.soruNotlari[kolon] && Object.keys(ogr.soruNotlari[kolon]).length > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-50 text-slate-600'} rounded-lg hover:opacity-80 transition-all flex items-center gap-1 mx-auto min-w-[140px] justify-center">
+                        <i data-lucide="${ogr.soruNotlari && ogr.soruNotlari[kolon] && Object.keys(ogr.soruNotlari[kolon]).length > 0 ? 'check-circle' : 'edit-3'}" class="w-4 h-4"></i>
+                        <span class="text-xs font-bold uppercase">${kolon === 'vize' ? 'Vize' : kolon === 'final' ? 'Final' : 'Büt'} Puanı Gir</span>
+                    </button>
+                </td>
+                <td class="p-3 text-center">
+                    <button onclick="ogrenciSil(${ogr.idx})" class="p-2 text-slate-400 hover:text-red-500 transition-all">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+  }
+
+  function ortHesapla(ogr) {
+    const v = parseFloat(ogr.vize) || 0;
+    const f = parseFloat(ogr.final) || 0;
+    const b = parseFloat(ogr.but) || 0;
+    if (!v) return null;
+    const aktifF = b > 0 ? b : f;
+    if (!aktifF) return null;
+    return (v * 0.4) + (aktifF * 0.6);
+  }
+
+  function alanGuncelle(idx, alan, deger) {
+    aktifSinif.ogrenciler[idx][alan] = deger;
+    veriKaydet();
+    sinifDetayGoster();
+  }
+
+  function yeniOgrenci() {
+    if (!aktifSinif.ogrenciler) aktifSinif.ogrenciler = [];
+    aktifSinif.ogrenciler.push({ idx: aktifSinif.ogrenciler.length, ad: '', ogrenci_no: '', vize: '', final: '', but: '' });
+    veriKaydet();
+    sinifDetayGoster();
+  }
+
+  function ogrenciSil(idx) {
+    if (confirm('Silmek istediğinizden emin misiniz?')) {
+      aktifSinif.ogrenciler.splice(idx, 1);
+      // idx'leri yeniden düzenle
+      aktifSinif.ogrenciler.forEach((o, i) => o.idx = i);
+      veriKaydet();
+      sinifDetayGoster();
+    }
+  }
+
+  function sirala(kolon) {
+    if (siralamaYonu.kolon === kolon) {
+      siralamaYonu.yon = siralamaYonu.yon === 'asc' ? 'desc' : 'asc';
+    } else {
+      siralamaYonu.kolon = kolon;
+      siralamaYonu.yon = 'desc';
+    }
+    sinifDetayGoster();
+  }
+
+  function kolonSec(kolon) {
+    aktifKolon = kolon;
+
+    // Parametre olarak yeni kolonu göndererek render et (Senkronizasyonu garanti altına alır)
+    sinifDetayGoster(kolon);
+
+    // Kullanıcıya bilgi ver
+    const kolonIsim = kolon === 'vize' ? 'Vize' : kolon === 'final' ? 'Final' : 'Bütünleme';
+    toastGoster(`Aktif kolon: ${kolonIsim}`, 'info');
+  }
+
+  function yeniSinifModal() {
+    duzenlenenSinifId = null;
+    document.getElementById('yeniSinifModalDiv').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = 'Yeni Sınıf Ekle';
+    document.getElementById('inputDersKodu').value = '';
+    document.getElementById('inputDersAdi').value = '';
+    document.getElementById('inputSube').value = '';
+  }
+
+  function sinifDuzenlemeAc(id) {
+    const sinif = (siniflar[yil] || []).find(s => s.id === id);
+    if (!sinif) return;
+
+    duzenlenenSinifId = id;
+    document.getElementById('yeniSinifModalDiv').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = 'Sınıf Bilgilerini Düzenle';
+    document.getElementById('inputDersKodu').value = sinif.kod;
+    document.getElementById('inputDersAdi').value = sinif.ad;
+    document.getElementById('inputSube').value = sinif.sube;
+  }
+
+  function modalKapat() {
+    document.getElementById('yeniSinifModalDiv').classList.add('hidden');
+  }
+
+  function sinifKaydet() {
+    const kod = document.getElementById('inputDersKodu').value;
+    const ad = document.getElementById('inputDersAdi').value;
+    const sube = document.getElementById('inputSube').value;
+
+    if (!kod || !ad || !sube) {
+      alert('Tüm alanları doldurun');
+      return;
+    }
+
+    if (!siniflar[yil]) siniflar[yil] = [];
+
+    if (duzenlenenSinifId) {
+      // Güncelleme modu
+      const sinifIdx = siniflar[yil].findIndex(s => s.id === duzenlenenSinifId);
+      if (sinifIdx !== -1) {
+        siniflar[yil][sinifIdx].kod = kod;
+        siniflar[yil][sinifIdx].ad = ad;
+        siniflar[yil][sinifIdx].sube = sube;
+        toastGoster('Sınıf bilgileri güncellendi', 'success');
+      }
+    } else {
+      // Ekleme modu
+      siniflar[yil].push({
+        id: Date.now().toString(),
+        kod, ad, sube,
+        ogrenciler: [],
+        analizler: []
+      });
+      toastGoster('Yeni sınıf eklendi', 'success');
+    }
+
+    veriKaydet();
+    sinifListesiniGoster();
+    if (aktifSinif && aktifSinif.id === duzenlenenSinifId) {
+      sinifDetayGoster(); // Aktif sınıf düzenlendi ise başlığı yenile
+    }
+    modalKapat();
+  }
+
+  function sinifSil(id) {
+    if (confirm('Bu sınıfı silmek istediğinizden emin misiniz?')) {
+      siniflar[yil] = siniflar[yil].filter(s => s.id !== id);
+      if (aktifSinif?.id === id) aktifSinif = null;
+      veriKaydet();
+      sinifListesiniGoster();
+      sinifDetayGoster();
+    }
+  }
+
+  function yilDegistir() {
+    yil = document.getElementById('ogretimYiliSelect').value;
+    aktifSinif = null;
+    sinifListesiniGoster();
+    sinifDetayGoster();
+  }
+
+  function tabloAra(val) {
+    aramaMetni = val;
+    // Tüm paneli yenilemek focus kaybına yol açar, sadece tablo body'sini yenileyelim
+    const tbody = document.querySelector('tbody');
+    if (tbody) {
+      tbody.innerHTML = ogrenciSatirlari();
+      lucide.createIcons();
+    }
+  }
+
+  function excelYukle() {
+    document.getElementById('fileInput').click();
+  }
+
+  function dosyaSecildi(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const dosyaAdi = file.name;
+    // Aynı dosya kontrolü
+    if (!aktifSinif.yuklenenDosyalar) aktifSinif.yuklenenDosyalar = { vize: [], final: [], but: [] };
+    if (aktifSinif.yuklenenDosyalar[aktifKolon].some(d => d.ad === dosyaAdi)) {
+      toastGoster(`Bu dosya zaten yüklü: ${dosyaAdi}`, 'warning');
+      e.target.value = '';
+      return;
+    }
+
+    const uzanti = file.name.split('.').pop().toLowerCase();
+    if (uzanti === 'json') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          jsonIsle(data);
+          dosyaKaydet(dosyaAdi, 'excel');
+        } catch (err) {
+          alert('JSON hatası: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1 });
+          excelIsle(jsonData);
+          dosyaKaydet(dosyaAdi, 'excel');
+        } catch (err) {
+          alert('Excel hatası: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+    e.target.value = '';
+  }
+
+  function dosyaKaydet(ad, tip) {
+    if (!aktifSinif.yuklenenDosyalar) aktifSinif.yuklenenDosyalar = { vize: [], final: [], but: [] };
+    aktifSinif.yuklenenDosyalar[aktifKolon].push({
+      ad: ad,
+      tip: tip,
+      tarih: new Date().toLocaleString('tr-TR')
+    });
+    veriKaydet();
+    yuklenenDosyalariGoster();
+  }
+
+  function yuklenenDosyalariGoster() {
+    const container = document.getElementById('dosyaListesiContainer');
+    if (!container || !aktifSinif) return;
+
+    if (!aktifSinif.yuklenenDosyalar) aktifSinif.yuklenenDosyalar = { vize: [], final: [], but: [] };
+    const dosyalar = aktifSinif.yuklenenDosyalar[aktifKolon] || [];
+
+    if (dosyalar.length === 0) {
+      container.innerHTML = `<div class="col-span-full py-6 text-center text-slate-400 text-sm font-medium border-2 border-dashed border-slate-100 rounded-xl">Bu sınav tipi için henüz dosya yüklenmedi.</div>`;
+      return;
+    }
+
+    container.innerHTML = dosyalar.map((d, i) => `
+          <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl group hover:border-indigo-300 transition-all">
+              <div class="flex items-center gap-3 overflow-hidden">
+                  <div class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                      <i data-lucide="${d.tip === 'excel' ? 'file-text' : 'file-question'}" class="w-4 h-4 ${d.tip === 'excel' ? 'text-emerald-500' : 'text-violet-500'}"></i>
+                  </div>
+                  <div class="overflow-hidden">
+                      <div class="text-xs font-bold text-slate-700 truncate" title="${d.ad}">${d.ad}</div>
+                      <div class="text-[9px] text-slate-400 font-medium">${d.tarih}</div>
+                  </div>
+              </div>
+              <button onclick="dosyaSil(${i})" class="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+          </div>
+      `).join('');
+    lucide.createIcons();
+  }
+
+  function dosyaSil(index) {
+    Swal.fire({
+      title: 'Dosya Kaydını Sil?',
+      text: 'Bu işlem sadece dosya adını listeden siler, girilen verileri etkilemez.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonText: 'İptal',
+      confirmButtonText: 'Evet, Sil'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        aktifSinif.yuklenenDosyalar[aktifKolon].splice(index, 1);
+        veriKaydet();
+        yuklenenDosyalariGoster();
+        toastGoster('Dosya kaydı silindi', 'info');
+      }
+    });
+  }
+
+  function excelIsle(data) {
+    const baslik = data[0].map(h => String(h).toLowerCase());
+    const adIdx = baslik.findIndex(h => h.includes('adı_'));
+    const soyadIdx = baslik.findIndex(h => h.includes('soyadı_'));
+    const ogrenciNoIdx = baslik.findIndex(h => h.includes('öğrenci no') || h.includes('ogrenci no'));
+
+    // Aktif kolona göre index belirle
+    let notIdx = -1;
+    if (aktifKolon === 'vize') {
+      notIdx = baslik.findIndex(h => h.includes('vize'));
+    } else if (aktifKolon === 'final') {
+      notIdx = baslik.findIndex(h => h.includes('final'));
+    } else if (aktifKolon === 'but') {
+      notIdx = baslik.findIndex(h => h.includes('büt') || h.includes('but'));
+    }
+
+    let eklenen = 0;
+    let guncellenen = 0;
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const ad = `${row[adIdx] || ''} ${row[soyadIdx] || ''}`.trim();
+      if (!ad) continue;
+
+      const notDegeri = notIdx !== -1 ? (row[notIdx] || '') : '';
+      const ogrenciNo = ogrenciNoIdx !== -1 ? (row[ogrenciNoIdx] || '') : '';
+
+      // Mevcut öğrenci kontrolü
+      const mevcutIdx = aktifSinif.ogrenciler.findIndex(o => o.ad.toLowerCase() === ad.toLowerCase());
+
+      if (mevcutIdx !== -1) {
+        // Güncelle
+        aktifSinif.ogrenciler[mevcutIdx][aktifKolon] = notDegeri;
+        if (ogrenciNo) aktifSinif.ogrenciler[mevcutIdx].ogrenci_no = ogrenciNo;
+        guncellenen++;
+      } else {
+        // Yeni ekle
+        aktifSinif.ogrenciler.push({
+          idx: aktifSinif.ogrenciler.length,
+          ad,
+          ogrenci_no: ogrenciNo,
+          vize: aktifKolon === 'vize' ? notDegeri : '',
+          final: aktifKolon === 'final' ? notDegeri : '',
+          but: aktifKolon === 'but' ? notDegeri : ''
+        });
+        eklenen++;
+      }
+    }
+
+    veriKaydet();
+    sinifDetayGoster();
+    toastGoster(`${eklenen} öğrenci eklendi, ${guncellenen} öğrenci güncellendi (${aktifKolon.toUpperCase()} kolonu)`, 'success');
+  }
+
+  function jsonIsle(data) {
+    if (!Array.isArray(data)) {
+      alert('JSON formatı hatalı');
+      return;
+    }
+
+    let eklenen = 0;
+    let guncellenen = 0;
+
+    data.forEach(item => {
+      const ad = item.ad && item.soyad ? `${item.ad} ${item.soyad}` : (item.name || '');
+      if (!ad) return;
+
+      const notDegeri = item[aktifKolon] || '';
+
+      // Mevcut öğrenci kontrolü
+      const mevcutIdx = aktifSinif.ogrenciler.findIndex(o => o.ad.toLowerCase() === ad.toLowerCase());
+
+      if (mevcutIdx !== -1) {
+        // Güncelle
+        aktifSinif.ogrenciler[mevcutIdx][aktifKolon] = notDegeri;
+        guncellenen++;
+      } else {
+        // Yeni ekle
+        aktifSinif.ogrenciler.push({
+          idx: aktifSinif.ogrenciler.length,
+          ad,
+          vize: aktifKolon === 'vize' ? notDegeri : '',
+          final: aktifKolon === 'final' ? notDegeri : '',
+          but: aktifKolon === 'but' ? notDegeri : ''
+        });
+        eklenen++;
+      }
+    });
+
+    veriKaydet();
+    sinifDetayGoster();
+    toastGoster(`${eklenen} öğrenci eklendi, ${guncellenen} öğrenci güncellendi (${aktifKolon.toUpperCase()} kolonu)`, 'success');
+  }
+
+  function excelIndir() {
+    // Başlıklar
+    const basliklar = ['Ad Soyad', 'Vize (40%)', 'Final (60%)', 'Bütünleme', 'Ortalama', 'Durum'];
+    const rows = [basliklar];
+
+    // Verileri hazırla
+    aktifSinif.ogrenciler.forEach(o => {
+      const ort = ortHesapla(o);
+      const durum = ort >= 60 ? 'GEÇTİ' : 'KALDI';
+      rows.push([
+        o.ad,
+        o.vize || '',
+        o.final || '',
+        o.but || '',
+        ort?.toFixed(2) || '0.00',
+        durum
+      ]);
+    });
+
+    // Sayfayı oluştur (AOA - Array of Arrays)
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // Stilleri uygula
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cell_ref = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[cell_ref]) continue;
+
+        // Varsayılan Stil
+        ws[cell_ref].s = {
+          font: { name: "Arial", sz: 11 },
+          alignment: { vertical: "center", horizontal: "left" },
+          border: {
+            top: { style: "thin", color: { rgb: "E2E8F0" } },
+            bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+            left: { style: "thin", color: { rgb: "E2E8F0" } },
+            right: { style: "thin", color: { rgb: "E2E8F0" } }
+          }
+        };
+
+        // Başlık Satırı Stili
+        if (R === 0) {
+          ws[cell_ref].s.fill = { fgColor: { rgb: "F8FAFC" } };
+          ws[cell_ref].s.font.bold = true;
+          ws[cell_ref].s.font.color = { rgb: "475569" };
+          ws[cell_ref].s.alignment.horizontal = "center";
+        } else {
+          // Durum Bazlı Renklendirme
+          const durumDegeri = ws[XLSX.utils.encode_cell({ r: R, c: 5 })]?.v; // 5. kolon 'Durum'
+          if (durumDegeri === 'KALDI') {
+            ws[cell_ref].s.font.color = { rgb: "EF4444" }; // Kırmızı (Tailwind rose-500)
+            if (C === 5) ws[cell_ref].s.font.bold = true;
+          } else if (durumDegeri === 'GEÇTİ') {
+            ws[cell_ref].s.font.color = { rgb: "10B981" }; // Yeşil (Tailwind emerald-500)
+            if (C === 5) ws[cell_ref].s.font.bold = true;
+          }
+        }
+      }
+    }
+
+    // Sütun genişliklerini ayarla
+    ws['!cols'] = [
+      { wch: 30 }, // Ad Soyad
+      { wch: 15 }, // Vize
+      { wch: 15 }, // Final
+      { wch: 15 }, // Bütünleme
+      { wch: 15 }, // Ortalama
+      { wch: 15 }  // Durum
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, aktifSinif.sube);
+    XLSX.writeFile(wb, `${aktifSinif.kod}_${aktifSinif.sube}_${yil}.xlsx`);
+  }
+
+  function analizAc() {
+    document.getElementById('analizModal').classList.remove('hidden');
+    analizGoster();
+  }
+
+  function analizKapat() {
+    document.getElementById('analizModal').classList.add('hidden');
+  }
+
+  function analizAc() {
+    if (!aktifSinif) {
+      toastGoster('Lütfen önce bir sınıf seçiniz', 'error');
+      return;
+    }
+    // Verileri aktar
+    localStorage.setItem('aktifSinif', JSON.stringify(aktifSinif));
+    // Yeni sekmede aç
+    const url = `/analiz/${aktifSinif.kod}/${aktifSinif.sube}`;
+    window.open(url, '_blank');
+  }
+
+  function analizKapat() {
+    // Modal kapansa da artık yeni sekmede açıldığından burada bir işleme gerek kalmadı
+  }
+
+  function sinavSorusuYukle() {
+    soruSecimAc();
+  }
+
+
+  function analizDosyasiYukle() {
+    document.getElementById('analizFileInput').click();
+  }
+
+  function analizDosyasiSecildi(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    dosyaKaydet(file.name, 'analiz');
+    if (file.type === 'application/pdf') {
+      toastGoster(`PDF Analiz dosyası yüklendi: ${file.name}`, 'info');
+    } else {
+      toastGoster('Dosya işleniyor...', 'info');
+    }
+    e.target.value = '';
+  }
+
+  // Kolon temizle
+  function kolonTemizle(kolon) {
+    const kolonIsim = kolon === 'vize' ? 'Vize' : kolon === 'final' ? 'Final' : 'Bütünleme';
+
+    Swal.fire({
+      title: `${kolonIsim} Notlarını Temizle?`,
+      text: `Tüm ${kolonIsim.toLowerCase()} notları silinecek!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Evet, Temizle',
+      cancelButtonText: 'İptal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        aktifSinif.ogrenciler.forEach(ogr => {
+          ogr[kolon] = '';
+        });
+        veriKaydet();
+        sinifDetayGoster();
+        toastGoster(`${kolonIsim} notları temizlendi`, 'success');
+      }
+    });
+  }
+
+  // Tüm tabloyu sil
+  function tumTabloyuSil() {
+    Swal.fire({
+      title: 'Tüm Tabloyu Sil?',
+      html: `
+        <p class="text-red-600 font-bold mb-2">⚠️ DİKKAT!</p>
+        <p>Bu işlem <strong>tüm ${aktifSinif.ogrenciler?.length || 0} öğrenciyi</strong> ve notlarını silecek!</p>
+        <p class="mt-2 text-slate-600 text-sm">Bu işlem geri alınamaz.</p>
+      `,
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Evet, Tümünü Sil',
+      cancelButtonText: 'İptal',
+      focusCancel: true
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const silinecekSayi = aktifSinif.ogrenciler?.length || 0;
+        aktifSinif.ogrenciler = [];
+        veriKaydet();
+        sinifDetayGoster();
+        toastGoster(`Tüm tablo temizlendi (${silinecekSayi} öğrenci silindi)`, 'success');
+      }
+    });
+  }
+
+  // İndirme seçimi
+  function indirSecimAc() {
+    Swal.fire({
+      title: 'İndirme Formatı',
+      text: 'Hangi formatta indirmek istersiniz?',
+      icon: 'question',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonColor: '#10b981',
+      denyButtonColor: '#3b82f6',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: '<i class="fas fa-file-excel"></i> Excel',
+      denyButtonText: '<i class="fas fa-file-code"></i> JSON',
+      cancelButtonText: 'İptal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        excelIndir();
+      } else if (result.isDenied) {
+        jsonIndir();
+      }
+    });
+  }
+
+  function excelIndir() {
+    const data = aktifSinif.ogrenciler.map(o => ({
+      'Sıra': o.idx + 1,
+      'Ad Soyad': o.ad,
+      'Öğrenci No': o.ogrenci_no || '',
+      'Vize (40%)': o.vize || '',
+      'Final (60%)': o.final || '',
+      'Bütünleme': o.but || '',
+      'Ortalama': ortHesapla(o)?.toFixed(2) || '0.00',
+      'Durum': ortHesapla(o) >= 60 ? 'GEÇTİ' : 'KALDI'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, aktifSinif.sube);
+    XLSX.writeFile(wb, `${aktifSinif.kod}_${aktifSinif.sube}_${yil}.xlsx`);
+    toastGoster('Excel dosyası indirildi', 'success');
+  }
+
+  function jsonIndir() {
+    const data = aktifSinif.ogrenciler.map((o, idx) => ({
+      sira: idx + 1,
+      ad: o.ad,
+      ogrenci_no: o.ogrenci_no || '',
+      vize: o.vize || '',
+      final: o.final || '',
+      butunleme: o.but || '',
+      ortalama: ortHesapla(o)?.toFixed(2) || '0.00',
+      durum: ortHesapla(o) >= 60 ? 'GEÇTİ' : 'KALDI'
+    }));
+
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${aktifSinif.kod}_${aktifSinif.sube}_${yil}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toastGoster('JSON dosyası indirildi', 'success');
+  }
+
+  // Sınav sorusu yükleme (Artık modal açıyor)
+  function sinavSorusuYukle() {
+    soruSecimAc();
+  }
+
+  // Soru Bankası butonu (Artık seçim modalını açıyor)
+  function soruBankasiAc() {
+    soruSecimAc();
+  }
+
+  // Soru Seçim Modalı Mantığı
+  let secilenSoruHavuzu = [];
+  let geciciSecilenler = [];
+
+  async function soruSecimAc() {
+    const modal = document.getElementById('soruSecimModal');
+    modal.classList.remove('hidden');
+    document.getElementById('soruBankasiListesi').innerHTML = '<div class="text-center p-8 text-slate-400 font-bold animate-pulse">Soru Bankası Okunuyor...</div>';
+
+    try {
+      const response = await fetch('/api/sorular-json');
+      secilenSoruHavuzu = await response.json();
+
+      // Aktif sınav tipine göre (vize/final/but) mevcut seçilenleri yükle
+      if (!aktifSinif.sinavSorulari) aktifSinif.sinavSorulari = { vize: [], final: [], but: [] };
+      // Geriye dönük uyumluluk: Eğer eski yapıdaysa objeye çevir
+      if (Array.isArray(aktifSinif.sinavSorulari)) {
+        aktifSinif.sinavSorulari = { vize: aktifSinif.sinavSorulari, final: [], but: [] };
+      }
+
+      geciciSecilenler = JSON.parse(JSON.stringify(aktifSinif.sinavSorulari[aktifKolon] || []));
+      soruBankasiRender();
+      geciciOzetGuncelle();
+    } catch (err) {
+      toastGoster('Soru bankası yüklenemedi: ' + err.message, 'error');
+    }
+  }
+
+  function soruBankasiRender() {
+    const liste = document.getElementById('soruBankasiListesi');
+    if (secilenSoruHavuzu.length === 0) {
+      liste.innerHTML = '<div class="text-center p-12 bg-white rounded-xl border border-dashed text-slate-400">Soru bankası boş</div>';
+      return;
+    }
+
+    liste.innerHTML = secilenSoruHavuzu.map(s => {
+      const secilimi = geciciSecilenler.some(gs => gs.id === s.id);
+      return `
+        <div onclick="geciciSoruEkleCikar(${s.id})" 
+             class="p-4 rounded-xl border-2 transition-all cursor-pointer ${secilimi ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-4 ring-indigo-50' : 'border-white bg-white hover:border-indigo-200'}">
+          <div class="flex items-start gap-4">
+            <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${secilimi ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300'}">
+              ${secilimi ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white border border-slate-200 text-slate-500 uppercase">${s.zorluk}</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-700">${s.puan} PUAN</span>
+                <span class="text-xs text-slate-400 font-mono">#${s.id}</span>
+              </div>
+              <p class="text-slate-800 font-medium leading-relaxed">${s.soru_metni}</p>
+              ${s.konu ? `<div class="mt-2 text-[11px] text-slate-400 italic">📚 ${s.konu}</div>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    lucide.createIcons();
+  }
+
+  function geciciSoruEkleCikar(id) {
+    const index = geciciSecilenler.findIndex(s => s.id === id);
+    if (index === -1) {
+      const soru = secilenSoruHavuzu.find(s => s.id === id);
+      geciciSecilenler.push(soru);
+    } else {
+      geciciSecilenler.splice(index, 1);
+    }
+    soruBankasiRender();
+    geciciOzetGuncelle();
+  }
+
+  function geciciOzetGuncelle() {
+    const toplamPuan = geciciSecilenler.reduce((acc, s) => acc + (parseInt(s.puan) || 0), 0);
+    document.getElementById('secilenSoruOzet').innerHTML = `
+      <span class="bg-indigo-600 text-white px-2 py-1 rounded-md mr-2">${geciciSecilenler.length}</span> Soru Seçildi 
+      <span class="mx-2 text-slate-300">|</span> 
+      <span class="text-indigo-600 font-bold">Toplam: ${toplamPuan} Puan</span>
+    `;
+  }
+
+  function soruSecimKapat() {
+    document.getElementById('soruSecimModal').classList.add('hidden');
+  }
+
+  function soruSecimOnayla() {
+    if (!aktifSinif.sinavSorulari) aktifSinif.sinavSorulari = { vize: [], final: [], but: [] };
+    aktifSinif.sinavSorulari[aktifKolon] = geciciSecilenler;
+
+    veriKaydet();
+    sinifDetayGoster();
+    soruSecimKapat();
+    toastGoster(`${geciciSecilenler.length} soru ${aktifKolon.toUpperCase()} sınavıyla ilişkilendirildi`, 'success');
+  }
+
+  // Puan Giriş Modalı Fonksiyonları
+  let aktifPuanOgrIdx = null;
+
+  function puanGirisAc(ogrIdx) {
+    aktifPuanOgrIdx = ogrIdx;
+    const ogr = aktifSinif.ogrenciler[ogrIdx];
+    const sorular = (aktifSinif.sinavSorulari && aktifSinif.sinavSorulari[aktifKolon]) || [];
+
+    if (sorular.length === 0) {
+      toastGoster('Lütfen önce Soru Bankası\'ndan bu sınav için soru seçiniz!', 'warning');
+      return;
+    }
+
+    document.getElementById('puanGirisModal').classList.remove('hidden');
+    document.getElementById('puanGirisOgrenciAd').textContent = ogr.ad;
+    document.getElementById('puanGirisSinavTip').textContent = `${aktifKolon.toUpperCase()} NOT GİRİŞİ`;
+
+    const liste = document.getElementById('puanGirisSoruListesi');
+    // Öğrencinin bu sınav tipindeki soru notları
+    if (!ogr.soruNotlari) ogr.soruNotlari = { vize: {}, final: {}, but: {} };
+    // Eski yapı uyumluluğu
+    if (!ogr.soruNotlari[aktifKolon]) ogr.soruNotlari[aktifKolon] = {};
+
+    const ogrNotlar = ogr.soruNotlari[aktifKolon];
+
+    liste.innerHTML = sorular.map((s, i) => `
+      <div class="bg-white p-4 rounded-xl border-2 border-slate-100 shadow-sm flex items-center justify-between gap-4">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-500">${i + 1}</span>
+            <span class="text-xs font-bold text-slate-400">MAKS: ${s.puan} PUAN</span>
+          </div>
+          <p class="text-sm font-medium text-slate-700 line-clamp-1">${s.soru_metni}</p>
+        </div>
+        <div class="w-20">
+          <input type="number" value="${ogrNotlar[s.id] || ''}" 
+                 oninput="puanGirisHesapla()"
+                 class="puan-input w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-center font-bold focus:border-emerald-500 focus:ring-0 outline-none" 
+                 data-soru-id="${s.id}" data-max="${s.puan}" placeholder="0">
+        </div>
+      </div>
+    `).join('');
+
+    puanGirisHesapla();
+    lucide.createIcons();
+  }
+
+  function puanGirisHesapla() {
+    let toplam = 0;
+    const inputs = document.querySelectorAll('.puan-input');
+    inputs.forEach(input => {
+      const val = parseFloat(input.value) || 0;
+      const max = parseFloat(input.dataset.max) || 100;
+      if (val > max) {
+        input.value = max;
+        toplam += max;
+      } else if (val < 0) {
+        input.value = 0;
+      } else {
+        toplam += val;
+      }
+    });
+    document.getElementById('puanGirisToplam').textContent = toplam % 1 === 0 ? toplam : toplam.toFixed(2);
+  }
+
+  function puanGirisKapat() {
+    document.getElementById('puanGirisModal').classList.add('hidden');
+    aktifPuanOgrIdx = null;
+  }
+
+  function puanGirisKaydet() {
+    const ogr = aktifSinif.ogrenciler[aktifPuanOgrIdx];
+    const inputs = document.querySelectorAll('.puan-input');
+
+    if (!ogr.soruNotlari) ogr.soruNotlari = { vize: {}, final: {}, but: {} };
+    if (!ogr.soruNotlari[aktifKolon]) ogr.soruNotlari[aktifKolon] = {};
+
+    inputs.forEach(input => {
+      ogr.soruNotlari[aktifKolon][input.dataset.soruId] = input.value;
+    });
+
+    const toplam = parseFloat(document.getElementById('puanGirisToplam').textContent) || 0;
+    ogr[aktifKolon] = toplam;
+
+    veriKaydet();
+    sinifDetayGoster();
+    puanGirisKapat();
+    toastGoster('Puanlar başarıyla kaydedildi', 'success');
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    veriYukle();
+    sinifListesiniGoster();
+    sinifDetayGoster();
+    lucide.createIcons();
+  });
+</script>
+{% endblock %}

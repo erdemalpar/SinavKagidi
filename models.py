@@ -183,3 +183,42 @@ class Ayarlar(db.Model):
             'cizgi_kalinlik': self.cizgi_kalinlik,
             'metin_boyutu': self.metin_boyutu
         }
+
+class YoklamaOturumu(db.Model):
+    """Yoklama oturumları (Ders/Sempozyum vb.)"""
+    __tablename__ = 'yoklama_oturumlari'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    baslik = db.Column(db.String(200), nullable=False)
+    aciklama = db.Column(db.Text)
+    tarih = db.Column(db.DateTime, default=datetime.datetime.now)
+    gecerlilik_suresi = db.Column(db.Integer, default=30)  # Dakika cinsinden
+    hedef_lat = db.Column(db.Float)  # Hedef koordinat (Enlem)
+    hedef_lng = db.Column(db.Float)  # Hedef koordinat (Boylam)
+    tolerans_metre = db.Column(db.Integer, default=100)  # Kaç metre yakından kabul edilecek?
+    aktif = db.Column(db.Boolean, default=True)
+    token_secret = db.Column(db.String(100))  # QR kod için benzersiz anahtar
+    
+    # İlişkiler
+    kayitlar = db.relationship('YoklamaKayit', backref='oturum', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<YoklamaOturumu {self.baslik}>'
+
+class YoklamaKayit(db.Model):
+    """Katılımcı kayıtları"""
+    __tablename__ = 'yoklama_kayitlari'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    oturum_id = db.Column(db.Integer, db.ForeignKey('yoklama_oturumlari.id'), nullable=False)
+    ad_soyad = db.Column(db.String(200), nullable=False)
+    numara_kurum = db.Column(db.String(100), nullable=False)
+    giris_saati = db.Column(db.DateTime, default=datetime.datetime.now)
+    lat = db.Column(db.Float)  # Katılımcının enlemi
+    lng = db.Column(db.Float)  # Katılımcının boylamı
+    mesafe = db.Column(db.Float)  # Hedefe olan mesafe (metre)
+    ip_adresi = db.Column(db.String(50))
+    tarayici_bilgisi = db.Column(db.Text)
+
+    def __repr__(self):
+        return f'<YoklamaKayit {self.ad_soyad}>'

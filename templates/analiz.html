@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Akademik Analiz - {{ kod }} / {{ sube }}{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-7xl mx-auto">
+    <div class="p-6 max-w-7xl mx-auto">
+        <div id="analizHeader"></div>
+
+        <div id="analizIcerik" class="space-y-8">
+            <!-- Dashboard içeriği dinamik olarak yüklenecek -->
+            <div class="flex items-center justify-center py-20">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let aktifSinif = null;
+        let aktifKolon = 'vize';
+
+        function renderHeader() {
+            const header = document.getElementById('analizHeader');
+            header.innerHTML = `
+            <div class="flex items-center justify-between mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex items-center gap-8">
+                    <div>
+                        <h1 class="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                            <span class="text-indigo-600">📊</span> Analiz Merkezi
+                        </h1>
+                        <p class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">
+                            Sınıf: <span class="text-slate-700">${aktifSinif.kod} - ${aktifSinif.sube}</span>
+                        </p>
+                    </div>
+                    <div class="h-10 w-px bg-slate-100"></div>
+                    <div class="flex gap-2 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                        ${['vize', 'final', 'but'].map(t => `
+                            <button onclick="soruSekmeGuncelle('${t}')" 
+                                class="px-5 py-2 rounded-lg text-xs font-black transition-all uppercase ${aktifKolon === t ? 'bg-white text-indigo-600 shadow-md border-indigo-50' : 'text-slate-400 hover:bg-white/50'}">
+                                ${t}
+                            </button>`).join('')}
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="window.print()" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Yazdır
+                    </button>
+                    <button onclick="window.close()" class="bg-slate-100 text-slate-600 px-6 py-2.5 rounded-xl font-bold hover:bg-slate-200 transition-all border border-slate-200/50">
+                        Kapat
+                    </button>
+                </div>
+            </div>
+        `;
+            lucide.createIcons();
+        }
+
+        function veriYukle() {
+            const data = localStorage.getItem('aktifSinif');
+            if (!data) {
+                document.body.innerHTML = `<div class="p-20 text-center font-bold text-rose-600">Veri bulunamadı.</div>`;
+                return;
+            }
+            aktifSinif = JSON.parse(data);
+            analizGoster();
+        }
+
+        function ortHesapla(ogr) {
+            const v = parseFloat(ogr.vize) || 0;
+            const f = parseFloat(ogr.final) || 0;
+            const b = parseFloat(ogr.but) || 0;
+            return b > 0 ? (v * 0.4 + b * 0.6) : (v * 0.4 + f * 0.6);
+        }
+
+        function analizGoster() {
+            const icerik = document.getElementById('analizIcerik');
+            const ogrenciler = aktifSinif.ogrenciler || [];
+
+            renderHeader();
+
+            // Veri Hazırlama
+            const vizeNotlar = ogrenciler.map(o => parseFloat(o.vize)).filter(n => !isNaN(n));
+            const finalNotlar = ogrenciler.map(o => parseFloat(o.final)).filter(n => !isNaN(n));
+            const ortalamalar = ogrenciler.map(o => ortHesapla(o)).filter(n => !isNaN(n));
+
+            const ort = (arr) => arr.length > 0 ? (arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+            const stdSapma = (arr) => {
+                const m = ort(arr);
+                return arr.length > 1 ? Math.sqrt(arr.reduce((s, x) => s + Math.pow(x - m, 2), 0) / (arr.length - 1)) : 0;
+            };
+            const korelasyon = (x, y) => {
+                const ortak = ogrenciler.filter(o => !isNaN(parseFloat(o[x])) && !isNaN(parseFloat(o[y])));
+                if (ortak.length < 2) return 0;
+                const xv = ortak.map(o => parseFloat(o[x]));
+                const yv = ortak.map(o => parseFloat(o[y]));
+                const mx = ort(xv);
+                const my = ort(yv);
+                const pay = xv.reduce((s, xi, i) => s + (xi - mx) * (yv[i] - my), 0);
+                const payda = Math.sqrt(xv.reduce((s, xi) => s + Math.pow(xi - mx, 2), 0) * yv.reduce((s, yi) => s + Math.pow(yi - my, 2), 0));
+                return payda === 0 ? 0 : (pay / payda).toFixed(3);
+            };
+
+            icerik.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                ${['vize', 'final', 'but'].map(tip => {
+                const notlar = ogrenciler.map(o => parseFloat(o[tip])).filter(n => !isNaN(n));
+                const tpl = notlar.length;
+                const gcn = notlar.filter(n => n >= 60).length;
+                const renk = tip === 'vize' ? 'indigo' : tip === 'final' ? 'rose' : 'orange';
+                return `
+                        <div class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-xs font-black uppercase tracking-tighter text-${renk}-600 bg-${renk}-50 px-3 py-1 rounded-full">${tip} ANALİZİ</span>
+                                <i data-lucide="activity" class="w-4 h-4 text-slate-300"></i>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="text-3xl font-black text-slate-800">${tpl}</div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase">KATILIM</div>
+                                </div>
+                                <div>
+                                    <div class="text-3xl font-black text-${renk}-600">${tpl > 0 ? ((gcn / tpl) * 100).toFixed(0) : 0}%</div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase">BAŞARI</div>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-slate-50 flex justify-between text-sm">
+                                <span class="text-slate-500 font-medium">Ortalama: <b class="text-slate-800">${ort(notlar).toFixed(1)}</b></span>
+                                <span class="text-slate-500 font-medium">Sapma: <b class="text-slate-800">${stdSapma(notlar).toFixed(1)}</b></span>
+                            </div>
+                        </div>
+                    `;
+            }).join('')}
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
+                    <h4 class="font-bold text-slate-700 mb-8 flex items-center gap-2 underline decoration-indigo-200 underline-offset-8">
+                        <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-500"></i> Not Dağılım Grafiği
+                    </h4>
+                    <canvas id="notDagilimChart" height="200"></canvas>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
+                    <h4 class="font-bold text-slate-700 mb-8 flex items-center gap-2 underline decoration-rose-200 underline-offset-8">
+                        <i data-lucide="move" class="w-5 h-5 text-rose-500"></i> Vize - Final Korelasyonu (r: ${korelasyon('vize', 'final')})
+                    </h4>
+                    <canvas id="korelasyonChart" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 rounded-3xl p-10 border border-slate-100 shadow-inner">
+                <div class="flex items-center justify-between mb-10">
+                    <h4 class="font-black text-2xl text-slate-800 flex items-center gap-3 italic tracking-tight uppercase">
+                        🔎 Kritik Soru Tespitleri
+                    </h4>
+                    <div class="bg-white text-slate-400 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100">
+                        Aktif: ${aktifKolon}
+                    </div>
+                </div>
+                <div id="soruAnalizPanel" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        `;
+
+            lucide.createIcons();
+            renderGrafikler(vizeNotlar, finalNotlar);
+            soruAnaliziRender();
+        }
+
+        function renderGrafikler(vn, fn) {
+            const dagilimCtx = document.getElementById('notDagilimChart').getContext('2d');
+            const bins = [0, 20, 40, 60, 80, 100];
+            const dataV = bins.map((b, i) => i === 0 ? 0 : vn.filter(n => n >= bins[i - 1] && n < bins[i]).length);
+            const dataF = bins.map((b, i) => i === 0 ? 0 : fn.filter(n => n >= bins[i - 1] && n < bins[i]).length);
+
+            new Chart(dagilimCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['0-20', '20-40', '40-60', '60-80', '80-100'],
+                    datasets: [
+                        { label: 'Vize', data: dataV.slice(1), backgroundColor: 'rgba(79, 70, 229, 0.8)', borderRadius: 12 },
+                        { label: 'Final', data: dataF.slice(1), backgroundColor: 'rgba(225, 29, 72, 0.8)', borderRadius: 12 }
+                    ]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 25 } } } }
+            });
+
+            const korCtx = document.getElementById('korelasyonChart').getContext('2d');
+            const scatterData = aktifSinif.ogrenciler
+                .filter(o => !isNaN(parseFloat(o.vize)) && !isNaN(parseFloat(o.final)))
+                .map(o => ({ x: parseFloat(o.vize), y: parseFloat(o.final) }));
+
+            new Chart(korCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Öğrenci Başarısı',
+                        data: scatterData,
+                        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: 'Vize Notu' }, min: 0, max: 100 },
+                        y: { title: { display: true, text: 'Final Notu' }, min: 0, max: 100 }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function soruAnaliziRender() {
+            const panel = document.getElementById('soruAnalizPanel');
+            const sorular = (aktifSinif.sinavSorulari && aktifSinif.sinavSorulari[aktifKolon]) || [];
+
+            if (sorular.length === 0) {
+                panel.innerHTML = `<div class="col-span-full text-center py-16 bg-white/50 rounded-3xl border-4 border-dashed border-slate-100 text-slate-400 font-black uppercase tracking-widest text-sm">Bu sınav için henüz soru tanımlanmamış</div>`;
+                return;
+            }
+
+            const soruIstatistikleri = sorular.map((s, i) => {
+                const notlar = aktifSinif.ogrenciler.map(o => (o.soruNotlari?.[aktifKolon]?.[s.id])).filter(n => n !== undefined && n !== '');
+                const ort = notlar.length > 0 ? (notlar.reduce((a, b) => parseFloat(a) + parseFloat(b), 0) / notlar.length) : 0;
+                const basari = (ort / s.puan) * 100;
+                return { ...s, index: i + 1, basari, katilim: notlar.length };
+            });
+
+            soruIstatistikleri.sort((a, b) => a.basari - b.basari);
+
+            panel.innerHTML = soruIstatistikleri.map(s => `
+            <div class="bg-white rounded-2xl p-5 border-2 ${s.basari < 50 ? 'border-rose-100' : 'border-emerald-100'} shadow-sm hover:shadow-md transition-all">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="w-10 h-10 rounded-xl ${s.basari < 50 ? 'bg-rose-600' : 'bg-emerald-600'} text-white flex items-center justify-center font-black text-sm shadow-lg">S${s.index}</div>
+                    <div class="flex-1">
+                        <p class="text-[13px] font-bold text-slate-800 line-clamp-2 leading-tight mb-3 h-10">${s.soru_metni}</p>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div class="h-full ${s.basari < 50 ? 'bg-rose-500' : 'bg-emerald-500'}" style="width: ${s.basari}%"></div>
+                        </div>
+                        <div class="flex justify-between items-center mt-3 text-[10px] font-black uppercase text-slate-400">
+                            <span>${s.katilim} CEVAP</span>
+                            <span class="${s.basari < 50 ? 'text-rose-600' : 'text-emerald-600'}">BAŞARI: %${s.basari.toFixed(0)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        }
+
+        function soruSekmeGuncelle(tip) {
+            aktifKolon = tip;
+            analizGoster();
+        }
+
+        document.addEventListener('DOMContentLoaded', veriYukle);
+    </script>
+
+    <style>
+        @media print {
+
+            .bg-slate-100,
+            .bg-slate-50 {
+                background-color: white !important;
+            }
+
+            .shadow-sm,
+            .shadow-lg,
+            .shadow-inner {
+                box-shadow: none !important;
+            }
+
+            .rounded-2xl,
+            .rounded-3xl {
+                border-radius: 0 !important;
+            }
+
+            button {
+                display: none !important;
+            }
+        }
+    </style>
+    {% endblock %}

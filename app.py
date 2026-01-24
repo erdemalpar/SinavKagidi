@@ -16,10 +16,30 @@ app.config['MAX_CONTENT_LENGTH'] = 512 * 1024 * 1024  # 512MB max dosya boyutu (
 IZIN_VERILEN_UZANTILAR = {'pdf', 'docx', 'xlsx', 'xls', 'png', 'jpg', 'jpeg', 'json'}
 
 # Veritabanı modellerini import et
-from models import db, Soru, SinavAyarlari, SinavKagidi, SinavSorusu, Ayarlar
+from models import db, Soru, SinavAyarlari, SinavKagidi, SinavSorusu, Ayarlar, YoklamaOturumu, YoklamaKayit
 
 # db'yi app ile başlat
 db.init_app(app)
+
+# JWT Yapılandırması
+from flask_jwt_extended import JWTManager, create_access_token, decode_token
+import qrcode
+import io
+import base64
+from math import radians, cos, sin, asin, sqrt
+
+app.config['JWT_SECRET_KEY'] = 'yoklama-gizli-anahtar-2026'
+jwt = JWTManager(app)
+
+def haversine(lon1, lat1, lon2, lat2):
+    """İki koordinat arasındaki mesafeyi metre cinsinden hesaplar"""
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    r = 6371000 # Dünyanın metre cinsinden yarıçapı
+    return c * r
 
 def izin_verilen_dosya(dosya_adi):
     """Dosya uzantısının izin verilen listede olup olmadığını kontrol eder"""
@@ -672,10 +692,158 @@ def sinav_soru_bosluk_guncelle(sinav_id, soru_id):
         return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
 
-@app.route('/tarif')
-def tarif():
-    """Geliştirme Tarihçesi (Tarifler) Sayfası"""
-    return render_template('tarif.html')
+@app.route('/not-girisi')
+def not_girisi():
+    """Not Girişi Sayfası"""
+    return render_template('not_girisi.html')
+
+@app.route('/analiz/<string:kod>/<string:sube>')
+def analiz_sayfasi(kod, sube):
+    """Analiz Sayfası - Yeni Sekmede"""
+    return render_template('analiz.html', kod=kod, sube=sube)
+
+# --- YOKLAMA SİSTEMİ ROUTE'LARI ---
+
+@app.route('/yoklama')
+def yoklama_paneli():
+    """Eğitmen Yoklama Paneli"""
+    oturumlar = YoklamaOturumu.query.order_by(YoklamaOturumu.tarih.desc()).all()
+    return render_template('yoklama.html', oturumlar=oturumlar)
+
+@app.route('/api/yoklama/oturum-baslat', methods=['POST'])
+def yoklama_oturum_baslat():
+    """Yeni bir yoklama oturumu başlatır"""
+    try:
+        data = request.json
+        yeni_oturum = YoklamaOturumu(
+            baslik=data.get('baslik'),
+            aciklama=data.get('aciklama'),
+            gecerlilik_suresi=int(data.get('sure', 30)),
+            hedef_lat=data.get('lat'),
+            hedef_lng=data.get('lng'),
+            tolerans_metre=int(data.get('tolerans', 100)),
+            token_secret=os.urandom(16).hex()
+        )
+        db.session.add(yeni_oturum)
+        db.session.commit()
+        
+        # Token oluştur (Kayıt formu için)
+        token = create_access_token(identity=str(yeni_oturum.id), additional_claims={"secret": yeni_oturum.token_secret})
+        
+        return jsonify({'basarili': True, 'oturum_id': yeni_oturum.id, 'token': token})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+@app.route('/api/yoklama/token-al/<int:oturum_id>')
+def yoklama_token_al(oturum_id):
+    """Belirli bir oturum için kayıt token'ı üretir"""
+    oturum = YoklamaOturumu.query.get_or_404(oturum_id)
+    token = create_access_token(identity=str(oturum.id), additional_claims={"secret": oturum.token_secret})
+    return jsonify({'token': token})
+
+@app.route('/api/yoklama/qr-kod/<token>')
+def yoklama_qr_kod(token):
+    """QR kod görseli üretir"""
+    # Host bilgisini al (Katılımcıların formu açabilmesi için tam URL gerekiyor)
+    base_url = request.host_url.rstrip('/')
+    kayit_url = f"{base_url}/yoklama/kayit/{token}"
+    
+    img = qrcode.make(kayit_url)
+    img_io = io.BytesIO()
+    img.save(img_io, 'PNG')
+    img_io.seek(0)
+    
+    return base64.b64encode(img_io.getvalue()).decode()
+
+@app.route('/yoklama/kayit/<token>')
+def yoklama_kayit_formu(token):
+    """Katılımcı Kayıt Formu (Mobil)"""
+    try:
+        # Token'ı doğrula
+        decoded = decode_token(token)
+        oturum_id = decoded['sub']
+        oturum = YoklamaOturumu.query.get(oturum_id)
+        
+        if not oturum or not oturum.aktif:
+            return "Bu yoklama oturumu artık geçerli değil.", 403
+            
+        return render_template('yoklama_kayit.html', token=token, oturum=oturum)
+    except Exception as e:
+        return f"Geçersiz veya süresi dolmuş bağlantı: {str(e)}", 400
+
+@app.route('/api/yoklama/kaydet', methods=['POST'])
+def yoklama_kaydet():
+    """Katılımcı bilgisini doğrular ve kaydeder"""
+    try:
+        data = request.json
+        token = data.get('token')
+        
+        # Token doğrula
+        decoded = decode_token(token)
+        oturum_id = decoded['sub']
+        oturum = YoklamaOturumu.query.get(oturum_id)
+        
+        if not oturum or not oturum.aktif:
+            return jsonify({'basarili': False, 'mesaj': 'Oturum kapalı veya geçersiz.'}), 403
+
+        # Konum doğrulaması
+        katilimci_lat = data.get('lat')
+        katilimci_lng = data.get('lng')
+        
+        if oturum.hedef_lat and oturum.hedef_lng:
+            if not katilimci_lat or not katilimci_lng:
+                return jsonify({'basarili': False, 'mesaj': 'Konum bilgisi gerekli.'}), 400
+            
+            mesafe = haversine(oturum.hedef_lng, oturum.hedef_lat, katilimci_lng, katilimci_lat)
+            
+            if mesafe > oturum.tolerans_metre:
+                return jsonify({'basarili': False, 'mesaj': f'Belirlenen alanın dışındasınız. ({int(mesafe)}m uzaktasınız)'}), 403
+        else:
+            mesafe = 0
+
+        # Mükerrer Kayıt Kontrolü (Aynı oturumda aynı isim/numara)
+        mevcut = YoklamaKayit.query.filter_by(
+            oturum_id=oturum_id, 
+            numara_kurum=data.get('numara_kurum')
+        ).first()
+        
+        if mevcut:
+            return jsonify({'basarili': False, 'mesaj': 'Daha önce kayıt yapılmış.'}), 400
+
+        # Kaydet
+        yeni_kayit = YoklamaKayit(
+            oturum_id=oturum_id,
+            ad_soyad=data.get('ad_soyad'),
+            numara_kurum=data.get('numara_kurum'),
+            lat=katilimci_lat,
+            lng=katilimci_lng,
+            mesafe=mesafe,
+            ip_adresi=request.remote_addr,
+            tarayici_bilgisi=request.headers.get('User-Agent')
+        )
+        db.session.add(yeni_kayit)
+        db.session.commit()
+        
+        return jsonify({'basarili': True, 'mesaj': 'Kaydınız başarıyla alındı.'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+@app.route('/api/yoklama/katilimcilar/<int:oturum_id>')
+def yoklama_katilimcilari(oturum_id):
+    """Bir oturuma katılanları listeler"""
+    kayitlar = YoklamaKayit.query.filter_by(oturum_id=oturum_id).order_by(YoklamaKayit.giris_saati.desc()).all()
+    liste = []
+    for k in kayitlar:
+        liste.append({
+            'ad_soyad': k.ad_soyad,
+            'numara': k.numara_kurum,
+            'saat': k.giris_saati.strftime('%H:%M:%S'),
+            'mesafe': f"{int(k.mesafe)}m" if k.mesafe else "-"
+        })
+    return jsonify(liste)
 
 if __name__ == '__main__':
     with app.app_context():
