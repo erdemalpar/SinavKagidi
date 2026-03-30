@@ -198,12 +198,40 @@ class YoklamaOturumu(db.Model):
     tolerans_metre = db.Column(db.Integer, default=100)  # Kaç metre yakından kabul edilecek?
     aktif = db.Column(db.Boolean, default=True)
     token_secret = db.Column(db.String(100))  # QR kod için benzersiz anahtar
+    oturum_sahibi = db.Column(db.String(200), default='Erdem ALPAR')
+    
+    oturum_sahibi = db.Column(db.String(200), default='Erdem ALPAR')
     
     # İlişkiler
     kayitlar = db.relationship('YoklamaKayit', backref='oturum', cascade='all, delete-orphan')
+    haftalar = db.relationship('YoklamaHaftasi', backref='oturum', cascade='all, delete-orphan')
+    ogrenciler = db.relationship('YoklamaOgrenci', backref='oturum', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<YoklamaOturumu {self.baslik}>'
+
+class YoklamaHaftasi(db.Model):
+    """Her bir dersin haftası"""
+    __tablename__ = 'yoklama_haftalari'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    oturum_id = db.Column(db.Integer, db.ForeignKey('yoklama_oturumlari.id'), nullable=False)
+    hafta_no = db.Column(db.Integer, nullable=False)
+    baslik = db.Column(db.String(200)) # "1. Hafta"
+    tarih = db.Column(db.DateTime)
+    aktif = db.Column(db.Boolean, default=False)
+    
+    # Bu haftaya ait kayıtlar
+    kayitlar = db.relationship('YoklamaKayit', backref='hafta', cascade='all, delete-orphan')
+
+class YoklamaOgrenci(db.Model):
+    """Derse kayıtlı öğrenciler (Excel'den gelen)"""
+    __tablename__ = 'yoklama_ogrenciler'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    oturum_id = db.Column(db.Integer, db.ForeignKey('yoklama_oturumlari.id'), nullable=False)
+    ad_soyad = db.Column(db.String(200))
+    numara = db.Column(db.String(100))
 
 class YoklamaKayit(db.Model):
     """Katılımcı kayıtları"""
@@ -211,6 +239,7 @@ class YoklamaKayit(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     oturum_id = db.Column(db.Integer, db.ForeignKey('yoklama_oturumlari.id'), nullable=False)
+    hafta_id = db.Column(db.Integer, db.ForeignKey('yoklama_haftalari.id'), nullable=True) # Hangi hafta?
     ad_soyad = db.Column(db.String(200), nullable=False)
     numara_kurum = db.Column(db.String(100), nullable=False)
     giris_saati = db.Column(db.DateTime, default=datetime.datetime.now)

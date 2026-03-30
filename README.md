@@ -71,25 +71,29 @@ Modern ve kullanıcı dostu bir web uygulaması ile profesyonel sınav kağıtla
 
 ### Adım Adım Kurulum
 
-1. **Projeyi klonlayın veya indirin**
+1. **Sanal Ortamı Hazırlayın** (Zaten varsa aktif edin)
 ```bash
-cd sinav-kagidi
+# Sanal ortam oluştur (Gerekliyse)
+python3 -m venv .venv
+
+# Sanal ortamı aktif et
+source .venv/bin/activate  # macOS/Linux
+# .venv\Scripts\activate     # Windows için
 ```
 
-2. **Gerekli Python paketlerini yükleyin**
+2. **Gerekli Paketleri Yükleyin**
 ```bash
 pip install -r requirements.txt
 ```
 
-3. **Uygulamayı başlatın**
+3. **Uygulamayı Başlatın**
 ```bash
 python app.py
 ```
 
-4. **Tarayıcınızda açın**
-```
-http://127.0.0.1:5001
-```
+4. **Tarayıcıda Görüntüleyin**
+Uygulama varsayılan olarak **5001** portunda çalışır:
+[http://127.0.0.1:5001](http://127.0.0.1:5001)
 
 ## 📂 Proje Yapısı
 

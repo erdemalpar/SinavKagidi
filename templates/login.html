@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sınav Kağıdı - Giriş Yap</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Permanent+Marker&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0c0c0e;
+            --paper-color: #fdfaf0;
+            --text-color: #333;
+            --accent-color: #d4a373;
+            --spotlight-radius: 150px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            perspective: 2000px;
+        }
+
+        /* Spotlight Overlay */
+        .spotlight-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle var(--spotlight-radius) at var(--x, 50%) var(--y, 50%),
+                    transparent 0%,
+                    rgba(0, 0, 0, 0.92) 100%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Man with Lantern Container */
+        .character-container {
+            position: absolute;
+            width: 250px;
+            height: 350px;
+            z-index: 5;
+            transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        .man-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Lantern Arm Movement */
+        .lantern-arm {
+            transform-origin: 100px 150px;
+            transition: transform 0.6s ease;
+        }
+
+        /* Paper Login Card */
+        .login-card {
+            background-color: var(--paper-color);
+            width: 420px;
+            padding: 60px 45px;
+            position: relative;
+            z-index: 2;
+            color: var(--text-color);
+            box-shadow:
+                0 10px 50px rgba(0, 0, 0, 0.8),
+                inset 0 0 40px rgba(0, 0, 0, 0.05);
+
+            /* Torn Paper Effect with clip-path */
+            clip-path: polygon(2% 2%, 15% 0%, 25% 3%, 35% 1%, 45% 4%, 55% 1%, 65% 3%, 75% 0%, 85% 4%, 98% 1%,
+                    100% 15%, 97% 25%, 100% 35%, 98% 45%, 100% 55%, 97% 65%, 100% 75%, 98% 85%, 100% 98%,
+                    85% 97%, 75% 100%, 65% 96%, 55% 99%, 45% 97%, 35% 100%, 25% 96%, 15% 98%, 2% 100%,
+                    0% 85%, 3% 75%, 1% 65%, 4% 55%, 1% 45%, 3% 35%, 0% 25%, 2% 15%);
+
+            transform: rotate(-1deg);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .login-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(212, 163, 115, 0.1) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 2.8rem;
+            text-align: center;
+            margin-bottom: 35px;
+            color: #1a1a1a;
+            letter-spacing: 2px;
+            transform: rotate(-1deg);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #666;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-bottom: 2px solid #ddd;
+            background: rgba(0, 0, 0, 0.02);
+            font-family: inherit;
+            font-size: 1.05rem;
+            outline: none;
+            transition: all 0.4s;
+            color: #222;
+        }
+
+        input:focus {
+            border-bottom-color: var(--accent-color);
+            background: rgba(212, 163, 115, 0.08);
+            padding-left: 20px;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 18px;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1.3rem;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            clip-path: polygon(1% 1%, 99% 0%, 100% 99%, 0% 100%);
+        }
+
+        .btn-login:hover {
+            background: var(--accent-color);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .message {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: 500;
+            min-height: 24px;
+        }
+
+        .error {
+            color: #e74c3c;
+            animation: shake 0.4s;
+        }
+
+        .success {
+            color: #27ae60;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-8px);
+            }
+
+            75% {
+                transform: translateX(8px);
+            }
+        }
+
+        /* Zoom-in Effect on Success */
+        .login-card.success-anim {
+            transform: scale(0.1) rotate(360deg) !important;
+            opacity: 0;
+        }
+
+        .portal-active {
+            animation: portalZoom 1.2s forwards ease-in;
+        }
+
+        @keyframes portalZoom {
+            to {
+                transform: scale(30);
+                filter: blur(20px);
+                opacity: 0;
+            }
+        }
+
+        /* SVG Character Details */
+        .man-fill {
+            fill: #000;
+        }
+
+        .lantern-light-effect {
+            fill: #ffdf00;
+            filter: blur(8px);
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="spotlight-overlay" id="spotlight"></div>
+
+    <div class="character-container" id="character">
+        <svg class="man-svg" viewBox="0 0 200 400">
+            <!-- Shadow Character -->
+            <path class="man-fill" d="M80 300 Q100 280 120 300 L115 380 L85 380 Z" />
+            <rect class="man-fill" x="75" y="160" width="50" height="140" rx="15" />
+            <circle class="man-fill" cx="100" cy="120" r="25" />
+            <path class="man-fill" d="M65 110 Q100 85 135 110 L135 120 L65 120 Z" />
+
+            <!-- Dynamic Arm -->
+            <g class="lantern-arm" id="lanternArm">
+                <path d="M125 180 Q160 180 170 240" fill="none" stroke="#000" stroke-width="14"
+                    stroke-linecap="round" />
+                <g transform="translate(170, 240)">
+                    <rect fill="#333" x="-18" y="0" width="36" height="45" rx="4" />
+                    <rect fill="#ffdf00" x="-12" y="8" width="24" height="28" />
+                    <circle class="lantern-light-effect" cx="0" cy="22" r="20" />
+                    <path d="M-18 0 L0 -20 L18 0" fill="#222" />
+                </g>
+            </g>
+
+            <!-- Static Arm -->
+            <path d="M75 180 Q45 180 35 250" fill="none" stroke="#000" stroke-width="14" stroke-linecap="round" />
+        </svg>
+    </div>
+
+    <div class="login-card" id="loginCard">
+        <h1>GİRİŞ</h1>
+        <div class="form-group">
+            <label for="username">Kullanıcı Adı</label>
+            <input type="text" id="username" placeholder="Sisteme kayıtlı adınız..." autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="password">Parola</label>
+            <input type="password" id="password" placeholder="Parolanızı girin...">
+        </div>
+        <button class="btn-login" id="loginBtn">SİSTEME GİRİŞ YAP</button>
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const spotlight = document.getElementById('spotlight');
+        const character = document.getElementById('character');
+        const lanternArm = document.getElementById('lanternArm');
+        const loginCard = document.getElementById('loginCard');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const messageBox = document.getElementById('message');
+
+        // Initial State
+        let currentX = window.innerWidth / 2;
+        let currentY = window.innerHeight / 2;
+        updateSpotlight(currentX, currentY);
+
+        function updateSpotlight(x, y) {
+            spotlight.style.setProperty('--x', `${x}px`);
+            spotlight.style.setProperty('--y', `${y}px`);
+        }
+
+        function moveCharacter(element) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            // Positioning character relative to targeted input
+            character.style.opacity = '1';
+            character.style.transform = `scale(1) translateX(0)`;
+            character.style.left = `${rect.left - 240}px`;
+            character.style.top = `${rect.top - 120}px`;
+
+            // Adjust Lantern Angle
+            const angle = element.id === 'password' ? 25 : -5;
+            lanternArm.style.transform = `rotate(${angle}deg)`;
+
+            // Focus Spotlight
+            updateSpotlight(centerX, centerY);
+            spotlight.style.setProperty('--spotlight-radius', '200px');
+        }
+
+        usernameInput.addEventListener('focus', () => moveCharacter(usernameInput));
+        passwordInput.addEventListener('focus', () => moveCharacter(passwordInput));
+
+        // Background movement
+        document.addEventListener('mousemove', (e) => {
+            if (document.activeElement.tagName !== 'INPUT') {
+                updateSpotlight(e.clientX, e.clientY);
+                character.style.opacity = '0.3';
+                spotlight.style.setProperty('--spotlight-radius', '150px');
+            }
+        });
+
+        loginBtn.addEventListener('click', async () => {
+            const kullanici_ad = usernameInput.value;
+            const parola = passwordInput.value;
+
+            if (!kullanici_ad || !parola) {
+                showMessage('Lütfen boş alan bırakmayın!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ kullanici_ad, parola })
+                });
+
+                const data = await response.json();
+
+                if (data.basarili) {
+                    showMessage('Giriş başarılı! Hazırlanın...', 'success');
+
+                    // Exit Animation
+                    loginCard.classList.add('success-anim');
+                    document.body.classList.add('portal-active');
+
+                    setTimeout(() => {
+                        window.location.href = data.yonlendir;
+                    }, 1100);
+                } else {
+                    showMessage(data.mesaj, 'error');
+                    loginCard.style.animation = 'none';
+                    setTimeout(() => loginCard.style.animation = 'shake 0.4s', 10);
+                }
+            } catch (error) {
+                showMessage('Sunucu bağlantısı kurulamadı!', 'error');
+            }
+        });
+
+        function showMessage(msg, type) {
+            messageBox.textContent = msg;
+            messageBox.className = `message ${type}`;
+        }
+    </script>
+</body>
+
+</html>

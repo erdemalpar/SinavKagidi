@@ -427,6 +427,23 @@
                     class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
             </div>
 
+            <!-- Puan Boyutu (YENİ) -->
+            <div class="space-y-3 pt-4 border-t border-slate-100">
+                <div class="flex items-center justify-between text-xs font-medium text-slate-700">
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="award" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <span>Puan Boyutu</span>
+                    </div>
+                    <span id="puanKutusuLabel"
+                        class="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                        %{{ sinav.puan_kutusu_boyutu|default(100) }}
+                    </span>
+                </div>
+                <input type="range" id="puanKutusuSlider" min="50" max="250" step="5"
+                    value="{{ sinav.puan_kutusu_boyutu|default(100) }}" oninput="puanKutusuDegistir(this.value)"
+                    class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+            </div>
+
             <!-- Şıklar -->
             <div class="space-y-4 pt-4 border-t border-slate-100">
                 <h4 class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Şık Düzeni</h4>

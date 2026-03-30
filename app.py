@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from datetime import datetime
 from sqlalchemy import text
 import os
 from werkzeug.utils import secure_filename
 import json
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sinav-kagidi-gizli-anahtar-2026'
@@ -46,7 +47,54 @@ def izin_verilen_dosya(dosya_adi):
     return '.' in dosya_adi and \
            dosya_adi.rsplit('.', 1)[1].lower() in IZIN_VERILEN_UZANTILAR
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'kullanici_ad' not in session:
+            return redirect(url_for('login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'kullanici_ad' not in session:
+            return redirect(url_for('login', next=request.url))
+        if session.get('rol') != 'admin':
+            return "Bu sayfaya erişim yetkiniz yok.", 403
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        data = request.json
+        kullanici_ad = data.get('kullanici_ad')
+        parola = data.get('parola')
+        
+        # Admin Kontrolü
+        if kullanici_ad == 'admin' and parola == 'admin':
+            session['kullanici_ad'] = kullanici_ad
+            session['rol'] = 'admin'
+            return jsonify({'basarili': True, 'yonlendir': url_for('anasayfa'), 'rol': 'admin'})
+        
+        # Öğrenci Kontrolü
+        if kullanici_ad == 'ogrenci' and parola == '12345+pl':
+            session['kullanici_ad'] = kullanici_ad
+            session['rol'] = 'ogrenci'
+            return jsonify({'basarili': True, 'yonlendir': url_for('anasayfa'), 'rol': 'ogrenci'})
+            
+        return jsonify({'basarili': False, 'mesaj': 'Geçersiz kullanıcı adı veya parola'}), 401
+        
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def anasayfa():
     """Ana sayfa - Dashboard"""
     toplam_soru = Soru.query.count()
@@ -56,6 +104,7 @@ def anasayfa():
                          toplam_sinav=toplam_sinav)
 
 @app.route('/soru-bankasi')
+@admin_required
 def soru_bankasi():
     """Soru bankası sayfası"""
     sorular = Soru.query.order_by(Soru.olusturma_tarihi.desc()).all()
@@ -309,6 +358,7 @@ def dosya_yukle():
         return jsonify({'basarili': False, 'mesaj': f'Genel Hata: {str(e)}'}), 400
 
 @app.route('/sinav-hazirlama')
+@admin_required
 def sinav_hazirlama():
     """Sınav hazırlama sayfası"""
     sorular = Soru.query.all()
@@ -443,6 +493,7 @@ def sinav_onizleme(sinav_id):
         return f"<h3>Önizleme Hatası (500)</h3><p>Hata: {str(e)}</p><pre>{traceback.format_exc()}</pre>", 500
 
 @app.route('/ayarlar')
+@admin_required
 def ayarlar():
     """Ayarlar sayfası"""
     ayarlar_obj = Ayarlar.query.first()
@@ -693,6 +744,7 @@ def sinav_soru_bosluk_guncelle(sinav_id, soru_id):
 
 
 @app.route('/not-girisi')
+@admin_required
 def not_girisi():
     """Not Girişi Sayfası"""
     return render_template('not_girisi.html')
@@ -704,7 +756,160 @@ def analiz_sayfasi(kod, sube):
 
 # --- YOKLAMA SİSTEMİ ROUTE'LARI ---
 
+@app.route('/api/yoklama/ayarlar', methods=['GET', 'POST'])
+def yoklama_ayarlari():
+    """Yoklama ayarlarını JSON olarak okur ve yazar"""
+    json_path = os.path.join(app.root_path, 'static', 'yoklama', 'YoklamaSetting.json')
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+    
+    if request.method == 'GET':
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as f:
+                return jsonify(json.load(f))
+        return jsonify({})
+    
+    if request.method == 'POST':
+        try:
+            # Sadece Yıl eklenecek
+            yil = request.form.get('yil')
+            
+            # JSON Dosyasını Oku
+            mevcut_veri = {'yillar': []}
+            if os.path.exists(json_path):
+                 with open(json_path, 'r', encoding='utf-8') as f:
+                    try: 
+                        mevcut_veri = json.load(f)
+                        if 'yillar' not in mevcut_veri: mevcut_veri['yillar'] = []
+                    except: pass
+            
+            if yil and yil not in mevcut_veri['yillar']:
+                mevcut_veri['yillar'].append(yil)
+                # Son eklenen yılı aktif yapabiliriz veya UI'da sonuncuyu seçeriz
+            
+            # Kaydet
+            with open(json_path, 'w', encoding='utf-8') as f:
+                json.dump(mevcut_veri, f, ensure_ascii=False, indent=4)
+                
+            return jsonify({'basarili': True, 'mesaj': 'Yıl eklendi', 'yillar': mevcut_veri['yillar']})
+            
+        except Exception as e:
+            return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+@app.route('/api/yoklama/yil-sil', methods=['POST'])
+def yil_sil():
+    """Tanımlı yılı JSON dosyasından siler"""
+    try:
+        yil = request.json.get('yil')
+        json_path = os.path.join(app.root_path, 'static', 'yoklama', 'YoklamaSetting.json')
+        
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as f:
+                veri = json.load(f)
+            
+            if 'yillar' in veri and yil in veri['yillar']:
+                veri['yillar'].remove(yil)
+                
+                with open(json_path, 'w', encoding='utf-8') as f:
+                    json.dump(veri, f, ensure_ascii=False, indent=4)
+                    
+                return jsonify({'basarili': True, 'mesaj': 'Yıl silindi'})
+        
+        return jsonify({'basarili': False, 'mesaj': 'Yıl bulunamadı'}), 404
+    except Exception as e:
+         return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+@app.route('/api/yoklama/yil-duzenle', methods=['POST'])
+def yil_duzenle():
+    """Tanımlı yılı günceller"""
+    try:
+        data = request.json
+        eskiYil = data.get('eskiYil')
+        yeniYil = data.get('yeniYil')
+        json_path = os.path.join(app.root_path, 'static', 'yoklama', 'YoklamaSetting.json')
+        
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as f:
+                veri = json.load(f)
+            
+            if 'yillar' in veri and eskiYil in veri['yillar']:
+                index = veri['yillar'].index(eskiYil)
+                veri['yillar'][index] = yeniYil
+                
+                with open(json_path, 'w', encoding='utf-8') as f:
+                    json.dump(veri, f, ensure_ascii=False, indent=4)
+                    
+                return jsonify({'basarili': True})
+        
+        return jsonify({'basarili': False, 'mesaj': 'Yıl bulunamadı'}), 404
+    except Exception as e:
+         return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+@app.route('/api/yoklama/oturum-duzenle/<int:oturum_id>', methods=['POST'])
+def oturum_duzenle(oturum_id):
+    """Oturumu günceller"""
+    try:
+        oturum = YoklamaOturumu.query.get(oturum_id)
+        if not oturum:
+             return jsonify({'basarili': False, 'mesaj': 'Oturum bulunamadı'}), 404
+
+        baslik = request.form.get('baslik')
+        aciklama = request.form.get('aciklama')
+        sure = request.form.get('sure')
+        tolerans = request.form.get('tolerans')
+        yil = request.form.get('yil')
+        oturum_sahibi = request.form.get('oturum_sahibi')
+
+        # Dosya güncelleme (Opsiyonel)
+        if 'dosya' in request.files:
+            dosya = request.files['dosya']
+            if dosya and dosya.filename != '':
+                upload_folder = os.path.join(app.root_path, 'static', 'yoklama', 'uploads')
+                filename = secure_filename(dosya.filename)
+                import uuid
+                filename = f"{uuid.uuid4().hex[:8]}_{filename}"
+                full_path = os.path.join(upload_folder, filename)
+                dosya.save(full_path)
+                # Not: Modelde dosya_yolu sütunu yoksa bu adım sadece dosya upload eder. 
+                # Oturum modelinde dosya yolu tutmuyorsak etkisi olmaz ama kodda kalsın.
+
+        # Yıl bilgisini açıklamaya ekle (Eğer değiştiyse)
+        tam_aciklama = aciklama
+        if yil:
+            if aciklama and f"[{yil}]" not in aciklama:
+                tam_aciklama = f"[{yil}] {aciklama}"
+            elif not aciklama:
+                tam_aciklama = f"[{yil}]"
+
+        oturum.baslik = baslik
+        oturum.aciklama = tam_aciklama
+        if oturum_sahibi: oturum.oturum_sahibi = oturum_sahibi
+        if sure: oturum.gecerlilik_suresi = int(sure)
+        if tolerans: oturum.tolerans_metre = int(tolerans)
+        
+        db.session.commit()
+        return jsonify({'basarili': True, 'mesaj': 'Oturum güncellendi'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+@app.route('/api/yoklama/oturum-sil/<int:oturum_id>', methods=['DELETE'])
+def oturum_sil(oturum_id):
+    """Oturumu veritabanından siler"""
+    try:
+        oturum = YoklamaOturumu.query.get(oturum_id)
+        if oturum:
+            db.session.delete(oturum)
+            db.session.commit()
+            return jsonify({'basarili': True, 'mesaj': 'Oturum silindi'})
+        return jsonify({'basarili': False, 'mesaj': 'Oturum bulunamadı'}), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+
 @app.route('/yoklama')
+@login_required # Hem admin hem öğrenci girebilir
 def yoklama_paneli():
     """Eğitmen Yoklama Paneli"""
     oturumlar = YoklamaOturumu.query.order_by(YoklamaOturumu.tarih.desc()).all()
@@ -712,22 +917,154 @@ def yoklama_paneli():
 
 @app.route('/api/yoklama/oturum-baslat', methods=['POST'])
 def yoklama_oturum_baslat():
-    """Yeni bir yoklama oturumu başlatır"""
+    """Yeni bir yoklama oturumu başlatır (FormData ile Yıl ve Dosya desteği)"""
     try:
-        data = request.json
+        # FormData olduğu için request.form ve request.files kullanılır
+        baslik = request.form.get('baslik')
+        aciklama = request.form.get('aciklama')
+        sure = request.form.get('sure')
+        tolerans = request.form.get('tolerans')
+        lat = request.form.get('lat')
+        lng = request.form.get('lng')
+        yil = request.form.get('yil')
+        oturum_sahibi = request.form.get('oturum_sahibi')
+
+        # Dosya işlemi (Katılımcı Listesi)
+        dosya_yolu = None
+        if 'dosya' in request.files:
+            dosya = request.files['dosya']
+            if dosya and dosya.filename != '':
+                upload_folder = os.path.join(app.root_path, 'static', 'yoklama', 'uploads')
+                os.makedirs(upload_folder, exist_ok=True)
+                
+                filename = secure_filename(dosya.filename)
+                import uuid
+                filename = f"{uuid.uuid4().hex[:8]}_{filename}"
+                full_path = os.path.join(upload_folder, filename)
+                dosya.save(full_path)
+                dosya_yolu = f"/static/yoklama/uploads/{filename}"
+
+        # Yıl bilgisini açıklamaya ekle
+        tam_aciklama = aciklama
+        if yil:
+            tam_aciklama = f"[{yil}] {aciklama}" if aciklama else f"[{yil}]"
+            
+        # JSON'a Oturumu da Kaydet (Opsiyonel ama yedek olsun)
+        try:
+             json_path = os.path.join(app.root_path, 'static', 'yoklama', 'YoklamaSetting.json')
+             # ... JSON yazma mantığı istenirse eklenebilir ...
+        except: pass
+        
+        # Oturumu (Dersi) Oluştur
         yeni_oturum = YoklamaOturumu(
-            baslik=data.get('baslik'),
-            aciklama=data.get('aciklama'),
-            gecerlilik_suresi=int(data.get('sure', 30)),
-            hedef_lat=data.get('lat'),
-            hedef_lng=data.get('lng'),
-            tolerans_metre=int(data.get('tolerans', 100)),
-            token_secret=os.urandom(16).hex()
+            baslik=baslik,
+            aciklama=tam_aciklama,
+            oturum_sahibi=oturum_sahibi if oturum_sahibi else 'Erdem ALPAR',
+            gecerlilik_suresi=int(sure) if sure else 30,
+            hedef_lat=float(lat) if lat else None,
+            hedef_lng=float(lng) if lng else None,
+            tolerans_metre=int(tolerans) if tolerans else 100,
+            token_secret=os.urandom(16).hex(),
+            aktif=True
         )
         db.session.add(yeni_oturum)
+        db.session.flush() # ID almak için flush
+
+        # Dosya işlemi ve Öğrenci Listesi (Pandas)
+        if 'dosya' in request.files:
+            dosya = request.files['dosya']
+            if dosya and dosya.filename != '':
+                try:
+                    upload_folder = os.path.join(app.root_path, 'static', 'yoklama', 'uploads')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    
+                    filename = secure_filename(dosya.filename)
+                    filename = f"{uuid.uuid4().hex[:8]}_{filename}"
+                    full_path = os.path.join(upload_folder, filename)
+                    dosya.save(full_path)
+                    dosya_yolu = f"/static/yoklama/uploads/{filename}"
+
+                    # Excel Okuma
+                    try:
+                        df = pd.read_excel(full_path)
+                        # Sütun isimlerini tahmin etmeye çalışalım
+                        # Genelde: "Numara", "Ad Soyad"
+                        # Basit döngü
+                        ogrenci_sayisi = 0
+                        for index, row in df.iterrows():
+                            # Basit yaklaşımlar:
+                            # 1. İlk sütun numara, ikinci ad soyad
+                            # 2. Sütun isimlerinde ara
+                            
+                            ad_soyad = None
+                            numara = None
+                            
+                            # Satırdaki verileri stringe çevirip ara
+                            row_values = [str(x) for x in row.values]
+                            
+                            # Excel yapısını bilmediğimiz için generic parse:
+                            # İlk dolu string olmayan ama sayı olan -> numara
+                            # String olan -> ad soyad
+                            # Bu çok riskli. Kullanıcı şablonuna güvenelim veya ilk 2 sütunu alalım.
+                            # Varsayım: 1. Sütun Numara, 2. Sütun Ad Soyad (veya tam tersi)
+                            
+                            val1 = str(row.iloc[0]).strip() if len(row) > 0 else ""
+                            val2 = str(row.iloc[1]).strip() if len(row) > 1 else ""
+
+                            # Eğer başlık satırı ise atla (Numara kelimesi içeriyorsa)
+                            if "numara" in val1.lower() or "ad soyad" in val1.lower():
+                                continue
+                            
+                            # Değerler boşsa geç
+                            if not val1 or val1 == 'nan': continue
+
+                            # Hangisi numara hangisi ad?
+                            # Genelde Numara sayısaldır
+                            if val1.isdigit():
+                                numara = val1
+                                ad_soyad = val2
+                            elif val2.isdigit():
+                                numara = val2
+                                ad_soyad = val1
+                            else:
+                                # İkisi de string ise, uzun olan addır :)
+                                if len(val1) > len(val2):
+                                    ad_soyad = val1
+                                    numara = val2
+                                else:
+                                    ad_soyad = val2
+                                    numara = val1
+                            
+                            if ad_soyad and numara:
+                                ogr = YoklamaOgrenci(
+                                    oturum_id=yeni_oturum.id,
+                                    ad_soyad=ad_soyad,
+                                    numara=numara
+                                )
+                                db.session.add(ogr)
+                                ogrenci_sayisi += 1
+                        
+                        print(f"{ogrenci_sayisi} öğrenci eklendi.")
+
+                    except Exception as ex:
+                        print(f"Excel okuma hatası: {ex}")
+
+                except Exception as e:
+                    print(f"Dosya kaydetme hatası: {e}")
+
+        # 14 Hafta Oluştur
+        for i in range(1, 15):
+            hafta = YoklamaHaftasi(
+                oturum_id=yeni_oturum.id,
+                hafta_no=i,
+                baslik=f"{i}. Hafta",
+                aktif=(i==1) # İlk hafta varsayılan aktif olsun mu? Hayır, manuel açsınlar. Şimdilik hepsi pasif.
+            )
+            db.session.add(hafta)
+
         db.session.commit()
         
-        # Token oluştur (Kayıt formu için)
+        # Token oluştur
         token = create_access_token(identity=str(yeni_oturum.id), additional_claims={"secret": yeni_oturum.token_secret})
         
         return jsonify({'basarili': True, 'oturum_id': yeni_oturum.id, 'token': token})
@@ -757,74 +1094,90 @@ def yoklama_qr_kod(token):
     return base64.b64encode(img_io.getvalue()).decode()
 
 @app.route('/yoklama/kayit/<token>')
-def yoklama_kayit_formu(token):
-    """Katılımcı Kayıt Formu (Mobil)"""
+def yoklama_kayit_sayfasi(token):
     try:
-        # Token'ı doğrula
         decoded = decode_token(token)
-        oturum_id = decoded['sub']
-        oturum = YoklamaOturumu.query.get(oturum_id)
+        identity = decoded['sub'] # Format: oturum_id:hafta_id veya sadece oturum_id (eski)
         
-        if not oturum or not oturum.aktif:
-            return "Bu yoklama oturumu artık geçerli değil.", 403
+        parts = str(identity).split(':')
+        oturum_id = parts[0]
+        hafta_id = parts[1] if len(parts) > 1 else None
+        
+        oturum = YoklamaOturumu.query.get(oturum_id)
+        if not oturum:
+            return "Oturum bulunamadı", 404
             
-        return render_template('yoklama_kayit.html', token=token, oturum=oturum)
+        hafta_metni = ""
+        if hafta_id:
+            hafta = YoklamaHaftasi.query.get(hafta_id)
+            if hafta: hafta_metni = f"- {hafta.hafta_no}. Hafta"
+            
+        return render_template('yoklama_kayit.html', oturum=oturum, token=token, hafta_metni=hafta_metni)
     except Exception as e:
         return f"Geçersiz veya süresi dolmuş bağlantı: {str(e)}", 400
 
-@app.route('/api/yoklama/kaydet', methods=['POST'])
-def yoklama_kaydet():
-    """Katılımcı bilgisini doğrular ve kaydeder"""
+@app.route('/api/yoklama/kayit-ol', methods=['POST'])
+def yoklama_kayit_ol():
     try:
         data = request.json
         token = data.get('token')
         
-        # Token doğrula
         decoded = decode_token(token)
-        oturum_id = decoded['sub']
+        identity = decoded['sub']
+        secret = decoded.get('secret')
+        
+        parts = str(identity).split(':')
+        oturum_id = int(parts[0])
+        hafta_id = int(parts[1]) if len(parts) > 1 else None # Hafta ID'yi al
+        
         oturum = YoklamaOturumu.query.get(oturum_id)
         
         if not oturum or not oturum.aktif:
             return jsonify({'basarili': False, 'mesaj': 'Oturum kapalı veya geçersiz.'}), 403
 
         # Konum doğrulaması
-        katilimci_lat = data.get('lat')
-        katilimci_lng = data.get('lng')
+        user_lat = data.get('lat')
+        user_lng = data.get('lng')
+        
+        mesafe = 0
+        mesafe_uygun = True
         
         if oturum.hedef_lat and oturum.hedef_lng:
-            if not katilimci_lat or not katilimci_lng:
+            if not user_lat or not user_lng:
                 return jsonify({'basarili': False, 'mesaj': 'Konum bilgisi gerekli.'}), 400
             
-            mesafe = haversine(oturum.hedef_lng, oturum.hedef_lat, katilimci_lng, katilimci_lat)
+            mesafe = haversine(oturum.hedef_lng, oturum.hedef_lat, user_lng, user_lat)
             
             if mesafe > oturum.tolerans_metre:
-                return jsonify({'basarili': False, 'mesaj': f'Belirlenen alanın dışındasınız. ({int(mesafe)}m uzaktasınız)'}), 403
-        else:
-            mesafe = 0
-
+                mesafe_uygun = False
+        
         # Mükerrer Kayıt Kontrolü (Aynı oturumda aynı isim/numara)
         mevcut = YoklamaKayit.query.filter_by(
             oturum_id=oturum_id, 
-            numara_kurum=data.get('numara_kurum')
+            hafta_id=hafta_id, # Hafta bazında mükerrer kontrol
+            numara_kurum=data.get('numara')
         ).first()
         
         if mevcut:
             return jsonify({'basarili': False, 'mesaj': 'Daha önce kayıt yapılmış.'}), 400
 
+        if not mesafe_uygun:
+            return jsonify({'basarili': False, 'mesaj': f'Konumunuz çok uzak! Lütfen sınıfta olduğunuza emin olun. (Mesafe: {int(mesafe)}m)'}), 400
+
         # Kaydet
+        # Eğer hafta_id varsa, onu da kaydet
         yeni_kayit = YoklamaKayit(
             oturum_id=oturum_id,
-            ad_soyad=data.get('ad_soyad'),
-            numara_kurum=data.get('numara_kurum'),
-            lat=katilimci_lat,
-            lng=katilimci_lng,
+            hafta_id=hafta_id,
+            ad_soyad=data.get('adSoyad'),
+            numara_kurum=data.get('numara'),
+            lat=user_lat,
+            lng=user_lng,
             mesafe=mesafe,
             ip_adresi=request.remote_addr,
-            tarayici_bilgisi=request.headers.get('User-Agent')
+            tarayici_bilgisi=request.user_agent.string
         )
         db.session.add(yeni_kayit)
-        db.session.commit()
-        
         return jsonify({'basarili': True, 'mesaj': 'Kaydınız başarıyla alındı.'})
         
     except Exception as e:
@@ -845,7 +1198,82 @@ def yoklama_katilimcilari(oturum_id):
         })
     return jsonify(liste)
 
+@app.route('/api/yoklama/ders-detay/<int:oturum_id>', methods=['GET'])
+def ders_detay(oturum_id):
+    """Haftalık tablo için verileri döner"""
+    try:
+        oturum = YoklamaOturumu.query.get(oturum_id)
+        if not oturum: return jsonify({'basarili': False}), 404
+        
+        haftalar = YoklamaHaftasi.query.filter_by(oturum_id=oturum_id).order_by(YoklamaHaftasi.hafta_no).all()
+        ogrenciler = YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).all()
+        kayitlar = YoklamaKayit.query.filter_by(oturum_id=oturum_id).all()
+        
+        # Basit serializasyon
+        haftalar_data = [{'id': h.id, 'hafta_no': h.hafta_no, 'aktif': h.aktif} for h in haftalar]
+        ogrenciler_data = [{'id': o.id, 'ad_soyad': o.ad_soyad, 'numara': o.numara} for o in ogrenciler]
+        yoklamalar_data = [{'hafta_id': k.hafta_id, 'numara': k.numara_kurum, 'ad_soyad': k.ad_soyad} for k in kayitlar]
+        
+        return jsonify({
+            'basarili': True,
+            'haftalar': haftalar_data,
+            'ogrenciler': ogrenciler_data,
+            'yoklamalar': yoklamalar_data
+        })
+    except Exception as e:
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+@app.route('/api/yoklama/hafta-baslat', methods=['POST'])
+def hafta_baslat():
+    """Seçili haftayı aktif eder ve QR token döner"""
+    try:
+        data = request.json
+        oturum_id = data.get('oturumId')
+        hafta_id = data.get('haftaId')
+        
+        oturum = YoklamaOturumu.query.get(oturum_id)
+        if not oturum: return jsonify({'basarili': False}), 404
+        
+        # Token oluştur (Hafta ID'sini de ekleyerek)
+        identity = f"{oturum.id}:{hafta_id}" # Format: oturum_id:hafta_id
+        
+        # Token süresi oturum ayarlarından
+        expires = datetime.timedelta(minutes=oturum.gecerlilik_suresi)
+        
+        token = create_access_token(
+            identity=identity, 
+            additional_claims={"secret": oturum.token_secret, "hafta_id": hafta_id},
+            expires_delta=expires
+        )
+        
+        return jsonify({'basarili': True, 'token': token})
+    except Exception as e:
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        
+        # Manuel Migration Kontrolü (SQLite için)
+        # oturum_sahibi sütunu yoksa ekle
+        try:
+            with db.engine.connect() as conn:
+                # Sütun var mı kontrol et (PRAGMA table_info)
+                res = conn.execute(db.text("PRAGMA table_info(yoklama_oturumlari)"))
+                columns = [row[1] for row in res]
+                if 'oturum_sahibi' not in columns:
+                    conn.execute(db.text("ALTER TABLE yoklama_oturumlari ADD COLUMN oturum_sahibi VARCHAR(200) DEFAULT 'Erdem ALPAR'"))
+                    print("Migration: oturum_sahibi sütunu eklendi.")
+                
+                # YoklamaKayit hafta_id kontrolü
+                res_kayit = conn.execute(db.text("PRAGMA table_info(yoklama_kayitlari)"))
+                columns_kayit = [row[1] for row in res_kayit]
+                if 'hafta_id' not in columns_kayit:
+                    conn.execute(db.text("ALTER TABLE yoklama_kayitlari ADD COLUMN hafta_id INTEGER REFERENCES yoklama_haftalari(id)"))
+                    print("Migration: yoklama_kayitlari -> hafta_id sütunu eklendi.")
+
+        except Exception as e:
+            print(f"Migration hatası (önemsiz olabilir): {e}")
+            
+        # Varsayılan kullanıcıyı oluştur
     app.run(debug=True, host='0.0.0.0', port=5001)
