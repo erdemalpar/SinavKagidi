@@ -88,10 +88,11 @@
                     `;
                     lucide.createIcons();
                 }, (err) => {
-                    document.getElementById('konum-durum').className = "bg-red-50 p-4 rounded-xl border border-red-100 flex items-center gap-3";
+                    // Konum alınamazsa (HTTP/HTTPS sorunu) öğrenciyi yormayalım
+                    document.getElementById('konum-durum').className = "bg-amber-50 p-4 rounded-xl border border-amber-100 flex items-center gap-3";
                     document.getElementById('konum-durum').innerHTML = `
-                        <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
-                        <p class="text-xs text-red-800">Hata: Lütfen konum izni verin!</p>
+                        <i data-lucide="info" class="w-5 h-5 text-amber-600"></i>
+                        <p class="text-xs text-amber-800">Cihaz konumu kapalı. Kimliğinizle devam edebilirsiniz.</p>
                     `;
                     lucide.createIcons();
                 });
@@ -108,16 +109,13 @@
                 return;
             }
 
-            if (!currentLat || !currentLng) {
-                alert('Konum bilgisi alınamadı. Lütfen konum izni verip sayfayı yenileyin.');
-                return;
-            }
+            // Konum alınamasa bile (HTTP üzerinden) kimlik bilgileriyle devam etmesine izin veriliyor.
 
             try {
                 btn.disabled = true;
                 btn.innerText = "Gönderiliyor...";
 
-                const res = await fetch('/api/yoklama/kaydet', {
+                const res = await fetch('/api/yoklama/kayit-ol', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

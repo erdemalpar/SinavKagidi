@@ -577,6 +577,9 @@
 </div>
 </div>
 
+    </div>
+</div>
+
 <script>
     let activeTab = 'imza';
 
@@ -609,7 +612,11 @@
 
     // Sayfa Yüklendiğinde
     document.addEventListener('DOMContentLoaded', () => {
-        const sonTab = localStorage.getItem('aktifAyarTab') || 'imza';
+        // URL'den tab parametresini çek (Örn: ?tab=sinavlar)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTab = urlParams.get('tab');
+        
+        const sonTab = urlTab || localStorage.getItem('aktifAyarTab') || 'imza';
         tabDegistir(sonTab);
 
         // Lucide

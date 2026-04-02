@@ -191,6 +191,8 @@ class YoklamaOturumu(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     baslik = db.Column(db.String(200), nullable=False)
     aciklama = db.Column(db.Text)
+    yil = db.Column(db.String(100)) # Yeni: Eğitim Yılı (Örn: 2025-2026)
+    dosya_yolu = db.Column(db.String(500)) # Yeni: Yüklenen Excel dosyasının yolu
     tarih = db.Column(db.DateTime, default=datetime.datetime.now)
     gecerlilik_suresi = db.Column(db.Integer, default=30)  # Dakika cinsinden
     hedef_lat = db.Column(db.Float)  # Hedef koordinat (Enlem)
@@ -200,7 +202,9 @@ class YoklamaOturumu(db.Model):
     token_secret = db.Column(db.String(100))  # QR kod için benzersiz anahtar
     oturum_sahibi = db.Column(db.String(200), default='Erdem ALPAR')
     
-    oturum_sahibi = db.Column(db.String(200), default='Erdem ALPAR')
+    # Yeni Özellikler: Mesafe ve Süre Kontrolü
+    konum_dogrulama = db.Column(db.Boolean, default=True) # Konum kontrolü yapılsın mı?
+    sure_kisiti = db.Column(db.Boolean, default=True) # Süre kısıtlaması olsun mu?
     
     # İlişkiler
     kayitlar = db.relationship('YoklamaKayit', backref='oturum', cascade='all, delete-orphan')
@@ -218,7 +222,7 @@ class YoklamaHaftasi(db.Model):
     oturum_id = db.Column(db.Integer, db.ForeignKey('yoklama_oturumlari.id'), nullable=False)
     hafta_no = db.Column(db.Integer, nullable=False)
     baslik = db.Column(db.String(200)) # "1. Hafta"
-    tarih = db.Column(db.DateTime)
+    tarih = db.Column(db.Date)
     aktif = db.Column(db.Boolean, default=False)
     
     # Bu haftaya ait kayıtlar
@@ -248,6 +252,7 @@ class YoklamaKayit(db.Model):
     mesafe = db.Column(db.Float)  # Hedefe olan mesafe (metre)
     ip_adresi = db.Column(db.String(50))
     tarayici_bilgisi = db.Column(db.Text)
+    liste_disi = db.Column(db.Boolean, default=False) # Listede var mı? (Asıl Excel listesi)
 
     def __repr__(self):
         return f'<YoklamaKayit {self.ad_soyad}>'

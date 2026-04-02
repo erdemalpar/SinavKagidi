@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
-from datetime import datetime
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Response
+from datetime import datetime, timedelta
 from sqlalchemy import text
 import os
 from werkzeug.utils import secure_filename
 import json
 from functools import wraps
+import socket
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sinav-kagidi-gizli-anahtar-2026'
@@ -17,7 +18,7 @@ app.config['MAX_CONTENT_LENGTH'] = 512 * 1024 * 1024  # 512MB max dosya boyutu (
 IZIN_VERILEN_UZANTILAR = {'pdf', 'docx', 'xlsx', 'xls', 'png', 'jpg', 'jpeg', 'json'}
 
 # Veritabanı modellerini import et
-from models import db, Soru, SinavAyarlari, SinavKagidi, SinavSorusu, Ayarlar, YoklamaOturumu, YoklamaKayit
+from models import db, Soru, SinavAyarlari, SinavKagidi, SinavSorusu, Ayarlar, YoklamaOturumu, YoklamaKayit, YoklamaHaftasi, YoklamaOgrenci
 
 # db'yi app ile başlat
 db.init_app(app)
@@ -41,6 +42,19 @@ def haversine(lon1, lat1, lon2, lat2):
     c = 2 * asin(sqrt(a))
     r = 6371000 # Dünyanın metre cinsinden yarıçapı
     return c * r
+
+def get_ip():
+    """Bilgisayarın yerel ağ IP adresini döner"""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Gerçek bir bağlantı yapmadan dısarıya doğru IP'yi bulur
+        s.connect(('8.8.8.8', 80))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
 def izin_verilen_dosya(dosya_adi):
     """Dosya uzantısının izin verilen listede olup olmadığını kontrol eder"""
@@ -844,6 +858,44 @@ def yil_duzenle():
     except Exception as e:
          return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
+@app.route('/api/yoklama/oturum-detay/<int:oturum_id>')
+def oturum_detay_api(oturum_id):
+    """Oturum bilgilerini, asıl öğrenci listesini ve tüm kayıtları JSON döner"""
+    oturum = YoklamaOturumu.query.get_or_404(oturum_id)
+    haftalar = YoklamaHaftasi.query.filter_by(oturum_id=oturum_id).order_by(YoklamaHaftasi.hafta_no).all()
+    
+    # Asıl Öğrenci Listesini Çek
+    asil_ogrenciler = YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).all()
+    
+    # Tüm Yoklama Kayıtlarını Çek
+    kayitlar = YoklamaKayit.query.filter_by(oturum_id=oturum_id).all()
+    
+    return jsonify({
+        'id': oturum.id,
+        'baslik': oturum.baslik,
+        'aciklama': oturum.aciklama,
+        'tarih': oturum.tarih.strftime('%Y-%m-%d %H:%M:%S') if oturum.tarih else None,
+        'gecerlilik_suresi': oturum.gecerlilik_suresi,
+        'tolerans_metre': oturum.tolerans_metre,
+        'hedef_lat': oturum.hedef_lat,
+        'hedef_lng': oturum.hedef_lng,
+        'oturum_sahibi': oturum.oturum_sahibi,
+        'yil': oturum.yil,
+        'dosya_yolu': oturum.dosya_yolu,
+        'konum_dogrulama': oturum.konum_dogrulama,
+        'sure_kisiti': oturum.sure_kisiti,
+        'haftalar': [{'id': h.id, 'no': h.hafta_no, 'tarih': h.tarih.strftime('%Y-%m-%d') if h.tarih else None} for h in haftalar],
+        'ogrenciler': [{'id': o.id, 'ad_soyad': o.ad_soyad, 'numara': o.numara} for o in asil_ogrenciler],
+        'yoklamalar': [{
+            'id': k.id, 
+            'hafta_id': k.hafta_id, 
+            'ad_soyad': k.ad_soyad, 
+            'numara': k.numara_kurum, # Modelde numara_kurum olarak geçiyor
+            'tarih': k.giris_saati.strftime('%d.%m.%Y %H:%M') if k.giris_saati else None,
+            'liste_disi': k.liste_disi
+        } for k in kayitlar]
+    })
+
 @app.route('/api/yoklama/oturum-duzenle/<int:oturum_id>', methods=['POST'])
 def oturum_duzenle(oturum_id):
     """Oturumu günceller"""
@@ -852,28 +904,95 @@ def oturum_duzenle(oturum_id):
         if not oturum:
              return jsonify({'basarili': False, 'mesaj': 'Oturum bulunamadı'}), 404
 
-        baslik = request.form.get('baslik')
-        aciklama = request.form.get('aciklama')
-        sure = request.form.get('sure')
-        tolerans = request.form.get('tolerans')
-        yil = request.form.get('yil')
-        oturum_sahibi = request.form.get('oturum_sahibi')
+        oturum.baslik = request.form.get('baslik')
+        oturum.aciklama = request.form.get('aciklama')
+        oturum.gecerlilik_suresi = int(request.form.get('sure')) if request.form.get('sure') else 30
+        oturum.tolerans_metre = int(request.form.get('tolerans')) if request.form.get('tolerans') else 100
+        oturum.oturum_sahibi = request.form.get('oturum_sahibi') or 'Erdem ALPAR'
+        oturum.yil = request.form.get('yil')
+        
+        # HAFTALIK TARİH GÜNCELLEME (YEPYENİ)
+        hafta_tarihleri_json = request.form.get('hafta_tarihleri')
+        if hafta_tarihleri_json:
+            try:
+                import json
+                hafta_tarihleri = json.loads(hafta_tarihleri_json)
+                for h_no_str, h_tarih in hafta_tarihleri.items():
+                    h_no = int(h_no_str)
+                    hafta_obj = YoklamaHaftasi.query.filter_by(oturum_id=oturum_id, hafta_no=h_no).first()
+                    if hafta_obj:
+                        if h_tarih:
+                            parsed_tarih = datetime.strptime(h_tarih, '%Y-%m-%d').date()
+                            hafta_obj.tarih = parsed_tarih
+                            hafta_obj.baslik = f"{h_no}. Hafta ({parsed_tarih.strftime('%d.%m.%Y')})"
+                            # EĞER 1. HAFTA İSE OTURUMUN GENEL TARİHİNİ DE GÜNCELLE
+                            if h_no == 1:
+                                oturum.tarih = datetime.combine(parsed_tarih, datetime.min.time())
+                        else:
+                            hafta_obj.tarih = None
+                            hafta_obj.baslik = f"{h_no}. Hafta"
+            except Exception as jse:
+                print(f"Hafta Tarihleri Parse Hatası: {jse}")
 
-        # Dosya güncelleme (Opsiyonel)
+        # Excel Dosyası (Öğrenci Listesi) Güncelleme veya İlk Yükleme
         if 'dosya' in request.files:
-            dosya = request.files['dosya']
-            if dosya and dosya.filename != '':
-                upload_folder = os.path.join(app.root_path, 'static', 'yoklama', 'uploads')
-                filename = secure_filename(dosya.filename)
+            file = request.files['dosya']
+            if file and file.filename != '':
                 import uuid
+                import pandas as pd
+                upload_folder = os.path.join(app.root_path, 'static', 'yoklama', 'uploads')
+                os.makedirs(upload_folder, exist_ok=True)
+                
+                filename = secure_filename(file.filename)
                 filename = f"{uuid.uuid4().hex[:8]}_{filename}"
                 full_path = os.path.join(upload_folder, filename)
-                dosya.save(full_path)
-                # Not: Modelde dosya_yolu sütunu yoksa bu adım sadece dosya upload eder. 
-                # Oturum modelinde dosya yolu tutmuyorsak etkisi olmaz ama kodda kalsın.
+                file.save(full_path)
+                
+                oturum.dosya_yolu = f"/static/yoklama/uploads/{filename}"
+                
+                # ÖĞRENCİ LİSTESİNİ VERİTABANINA MÜHÜRLE (SPESİFİK ŞABLON)
+                try:
+                    import pandas as pd
+                    df = pd.read_excel(full_path)
+                    
+                    # Mevcut öğrencileri temizle (Yenisi yüklendiği için)
+                    YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).delete()
+                    
+                    sayac = 0
+                    for _, row in df.iterrows():
+                        try:
+                            # 2. Kolon: No (Index 1), 3. Kolon: Ad (Index 2), 4. Kolon: Soyad (Index 3)
+                            no = str(row.iloc[1]).strip() if len(row) > 1 and not pd.isna(row.iloc[1]) else ""
+                            ad = str(row.iloc[2]).strip() if len(row) > 2 and not pd.isna(row.iloc[2]) else ""
+                            soyad = str(row.iloc[3]).strip() if len(row) > 3 and not pd.isna(row.iloc[3]) else ""
+                            
+                            no = no if no != 'nan' and no != 'None' else ""
+                            tam_ad = f"{ad} {soyad}".strip().upper()
+                            
+                            if tam_ad and len(tam_ad) > 1:
+                                yeni_ogr = YoklamaOgrenci(
+                                    oturum_id=oturum_id,
+                                    ad_soyad=tam_ad,
+                                    numara=no
+                                )
+                                db.session.add(yeni_ogr)
+                                sayac += 1
+                        except: continue
+                    
+                    db.session.commit()
+                    print(f"Spesifik Liste Düzenleme: {sayac} öğrenci veritabanına mühürlendi.")
+                except Exception as ex:
+                    print(f"Excel Mühürleme Hatası: {ex}")
 
-        # Yıl bilgisini açıklamaya ekle (Eğer değiştiyse)
-        tam_aciklama = aciklama
+        # Checkbox değerleri
+        oturum.konum_dogrulama = request.form.get('konum_dogrulama') == 'true'
+        oturum.sure_kisiti = request.form.get('sure_kisiti') == 'true'
+
+        db.session.commit()
+        return jsonify({'basarili': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
         if yil:
             if aciklama and f"[{yil}]" not in aciklama:
                 tam_aciklama = f"[{yil}] {aciklama}"
@@ -942,33 +1061,44 @@ def yoklama_oturum_baslat():
                 filename = f"{uuid.uuid4().hex[:8]}_{filename}"
                 full_path = os.path.join(upload_folder, filename)
                 dosya.save(full_path)
-                dosya_yolu = f"/static/yoklama/uploads/{filename}"
+        # 1. Hafta Tarihini Belirle (Genel oturum tarihi için)
+        hafta_tarihleri_json = request.form.get('hafta_tarihleri')
+        final_oturum_tarih = datetime.now()
+        if hafta_tarihleri_json:
+            try:
+                import json
+                ht = json.loads(hafta_tarihleri_json)
+                if ht.get('1'):
+                    final_oturum_tarih = datetime.strptime(ht.get('1'), '%Y-%m-%d')
+            except: pass
 
-        # Yıl bilgisini açıklamaya ekle
-        tam_aciklama = aciklama
-        if yil:
-            tam_aciklama = f"[{yil}] {aciklama}" if aciklama else f"[{yil}]"
-            
-        # JSON'a Oturumu da Kaydet (Opsiyonel ama yedek olsun)
-        try:
-             json_path = os.path.join(app.root_path, 'static', 'yoklama', 'YoklamaSetting.json')
-             # ... JSON yazma mantığı istenirse eklenebilir ...
-        except: pass
-        
-        # Oturumu (Dersi) Oluştur
         yeni_oturum = YoklamaOturumu(
             baslik=baslik,
-            aciklama=tam_aciklama,
+            aciklama=aciklama,
+            yil=request.form.get('yil'),
+            tarih=final_oturum_tarih,
             oturum_sahibi=oturum_sahibi if oturum_sahibi else 'Erdem ALPAR',
             gecerlilik_suresi=int(sure) if sure else 30,
-            hedef_lat=float(lat) if lat else None,
-            hedef_lng=float(lng) if lng else None,
+            hedef_lat=float(lat) if lat and lat != 'null' else None,
+            hedef_lng=float(lng) if lng and lng != 'null' else None,
             tolerans_metre=int(tolerans) if tolerans else 100,
             token_secret=os.urandom(16).hex(),
+            konum_dogrulama=konum_dogrulama,
+            sure_kisiti=sure_kisiti,
             aktif=True
         )
         db.session.add(yeni_oturum)
-        db.session.flush() # ID almak için flush
+        db.session.flush()
+
+        # Otomatik İlk Günü/Haftayı Oluştur
+        ilk_hafta = YoklamaHaftasi(
+            oturum_id=yeni_oturum.id,
+            hafta_no=1,
+            baslik=f"{now_tarih.strftime('%d.%m.%Y')} Tarihli Yoklama",
+            tarih=now_tarih,
+            aktif=True
+        )
+        db.session.add(ilk_hafta)
 
         # Dosya işlemi ve Öğrenci Listesi (Pandas)
         if 'dosya' in request.files:
@@ -982,83 +1112,72 @@ def yoklama_oturum_baslat():
                     filename = f"{uuid.uuid4().hex[:8]}_{filename}"
                     full_path = os.path.join(upload_folder, filename)
                     dosya.save(full_path)
-                    dosya_yolu = f"/static/yoklama/uploads/{filename}"
-
-                    # Excel Okuma
+                    
                     try:
+                        import pandas as pd
                         df = pd.read_excel(full_path)
-                        # Sütun isimlerini tahmin etmeye çalışalım
-                        # Genelde: "Numara", "Ad Soyad"
-                        # Basit döngü
-                        ogrenci_sayisi = 0
-                        for index, row in df.iterrows():
-                            # Basit yaklaşımlar:
-                            # 1. İlk sütun numara, ikinci ad soyad
-                            # 2. Sütun isimlerinde ara
-                            
-                            ad_soyad = None
-                            numara = None
-                            
-                            # Satırdaki verileri stringe çevirip ara
-                            row_values = [str(x) for x in row.values]
-                            
-                            # Excel yapısını bilmediğimiz için generic parse:
-                            # İlk dolu string olmayan ama sayı olan -> numara
-                            # String olan -> ad soyad
-                            # Bu çok riskli. Kullanıcı şablonuna güvenelim veya ilk 2 sütunu alalım.
-                            # Varsayım: 1. Sütun Numara, 2. Sütun Ad Soyad (veya tam tersi)
-                            
-                            val1 = str(row.iloc[0]).strip() if len(row) > 0 else ""
-                            val2 = str(row.iloc[1]).strip() if len(row) > 1 else ""
-
-                            # Eğer başlık satırı ise atla (Numara kelimesi içeriyorsa)
-                            if "numara" in val1.lower() or "ad soyad" in val1.lower():
-                                continue
-                            
-                            # Değerler boşsa geç
-                            if not val1 or val1 == 'nan': continue
-
-                            # Hangisi numara hangisi ad?
-                            # Genelde Numara sayısaldır
-                            if val1.isdigit():
-                                numara = val1
-                                ad_soyad = val2
-                            elif val2.isdigit():
-                                numara = val2
-                                ad_soyad = val1
-                            else:
-                                # İkisi de string ise, uzun olan addır :)
-                                if len(val1) > len(val2):
-                                    ad_soyad = val1
-                                    numara = val2
-                                else:
-                                    ad_soyad = val2
-                                    numara = val1
-                            
-                            if ad_soyad and numara:
-                                ogr = YoklamaOgrenci(
-                                    oturum_id=yeni_oturum.id,
-                                    ad_soyad=ad_soyad,
-                                    numara=numara
-                                )
-                                db.session.add(ogr)
-                                ogrenci_sayisi += 1
                         
-                        print(f"{ogrenci_sayisi} öğrenci eklendi.")
-
-                    except Exception as ex:
-                        print(f"Excel okuma hatası: {ex}")
+                        # İlk sütun boşsa temizle
+                        df = df.dropna(subset=[df.columns[0]], how='all')
+                        
+                        # Kullanıcı Spesifik Şablonu: 2. No, 3. Ad, 4. Soyad
+                        ogrenci_sayisi = 0
+                        for _, row in df.iterrows():
+                            try:
+                                raw_no = str(row.iloc[1]).strip() if len(row) > 1 and not pd.isna(row.iloc[1]) else ""
+                                raw_ad = str(row.iloc[2]).strip() if len(row) > 2 and not pd.isna(row.iloc[2]) else ""
+                                raw_soyad = str(row.iloc[3]).strip() if len(row) > 3 and not pd.isna(row.iloc[3]) else ""
+                                
+                                no = raw_no if raw_no != 'nan' else ""
+                                ad_soyad = (f"{raw_ad} {raw_soyad}").strip()
+                                
+                                if ad_soyad and ad_soyad != 'nan' and len(ad_soyad) > 1:
+                                    yeni_ogr = YoklamaOgrenci(
+                                        oturum_id=yeni_oturum.id,
+                                        ad_soyad=ad_soyad.upper(),
+                                        numara=no
+                                    )
+                                    db.session.add(yeni_ogr)
+                                    ogrenci_sayisi += 1
+                            except: continue
+                        
+                        yeni_oturum.dosya_yolu = f"/static/yoklama/uploads/{filename}"
+                        print(f"Spesifik Liste Başlat: {ogrenci_sayisi} öğrenci kaydedildi.")
+                        
+                        yeni_oturum.dosya_yolu = f"/static/yoklama/uploads/{filename}"
+                        print(f"Sarsılmaz Mühür Başlat: {ogrenci_sayisi} öğrenci veritabanına mühürlendi.")
+                    except Exception as e:
+                        print(f"Excel Okuma Hatası (Başlat): {e}")
 
                 except Exception as e:
                     print(f"Dosya kaydetme hatası: {e}")
 
         # 14 Hafta Oluştur
+        hafta_tarihleri_json = request.form.get('hafta_tarihleri')
+        hafta_tarihleri = {}
+        if hafta_tarihleri_json:
+            try:
+                import json
+                hafta_tarihleri = json.loads(hafta_tarihleri_json)
+            except: pass
+
         for i in range(1, 15):
+            h_tarih_str = hafta_tarihleri.get(str(i))
+            h_tarih = None
+            h_baslik = f"{i}. Hafta"
+            
+            if h_tarih_str:
+                try:
+                    h_tarih = datetime.strptime(h_tarih_str, '%Y-%m-%d').date()
+                    h_baslik = f"{i}. Hafta ({h_tarih.strftime('%d.%m.%Y')})"
+                except: pass
+
             hafta = YoklamaHaftasi(
                 oturum_id=yeni_oturum.id,
                 hafta_no=i,
-                baslik=f"{i}. Hafta",
-                aktif=(i==1) # İlk hafta varsayılan aktif olsun mu? Hayır, manuel açsınlar. Şimdilik hepsi pasif.
+                baslik=h_baslik,
+                tarih=h_tarih,
+                aktif=(i==1)
             )
             db.session.add(hafta)
 
@@ -1084,14 +1203,20 @@ def yoklama_qr_kod(token):
     """QR kod görseli üretir"""
     # Host bilgisini al (Katılımcıların formu açabilmesi için tam URL gerekiyor)
     base_url = request.host_url.rstrip('/')
+    
+    # Localhost veya 127.0.0.1 ise gerçek IP ile değiştir
+    if '127.0.0.1' in base_url or 'localhost' in base_url:
+        ip = get_ip()
+        base_url = base_url.replace('127.0.0.1', ip).replace('localhost', ip)
+        
     kayit_url = f"{base_url}/yoklama/kayit/{token}"
     
     img = qrcode.make(kayit_url)
     img_io = io.BytesIO()
     img.save(img_io, 'PNG')
     img_io.seek(0)
-    
-    return base64.b64encode(img_io.getvalue()).decode()
+    # QR Kodu bir PNG dosyası olarak doğrudan dönelim
+    return Response(img_io.getvalue(), mimetype='image/png')
 
 @app.route('/yoklama/kayit/<token>')
 def yoklama_kayit_sayfasi(token):
@@ -1116,6 +1241,83 @@ def yoklama_kayit_sayfasi(token):
     except Exception as e:
         return f"Geçersiz veya süresi dolmuş bağlantı: {str(e)}", 400
 
+@app.route('/api/admin/ogrenci-listesi-guncelle', methods=['POST'])
+@login_required
+@admin_required
+def ogrenci_listesi_guncelle():
+    """Bir oturumun (dersin) asıl öğrenci listesini Excel'den günceller"""
+    try:
+        oturum_id = request.form.get('oturum_id')
+        if not oturum_id: return jsonify({'basarili': False, 'mesaj': 'Oturum ID eksik'}), 400
+        
+        oturum = YoklamaOturumu.query.get(oturum_id)
+        if not oturum: return jsonify({'basarili': False, 'mesaj': 'Oturum bulunamadı'}), 404
+        
+        if 'dosya' not in request.files:
+            return jsonify({'basarili': False, 'mesaj': 'Dosya bulunamadı'}), 400
+            
+        dosya = request.files['dosya']
+        if dosya.filename == '':
+            return jsonify({'basarili': False, 'mesaj': 'Geçersiz dosya'}), 400
+
+        # Dosya uzantısı kontrolü
+        allowed_extensions = {'.xlsx', '.xls'}
+        file_ext = os.path.splitext(dosya.filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            return jsonify({'basarili': False, 'mesaj': 'Sadece .xlsx veya .xls dosyaları kabul edilir'}), 400
+
+        # Dosyayı kaydet
+        import uuid
+        upload_folder = app.config['UPLOAD_FOLDER']
+        if not os.path.exists(upload_folder): os.makedirs(upload_folder)
+        filename = f"liste_guncelle_{uuid.uuid4().hex[:6]}{file_ext}"
+        filepath = os.path.join(upload_folder, filename)
+        dosya.save(filepath)
+
+        # Excel oku (Pandas)
+        import pandas as pd
+        df = pd.read_excel(filepath)
+        
+        # Sütun tespiti (Önceki mantık)
+        name_col, numara_col = None, None
+        for col in df.columns:
+            if any(x in str(col).lower() for x in ['ad', 'soyad', 'isim', 'ogrenci']): name_col = col
+            if any(x in str(col).lower() for x in ['no', 'numara', 'id', 'student']): numara_col = col
+
+        if not name_col or not numara_col:
+            return jsonify({'basarili': False, 'mesaj': 'Excel içinde "Ad Soyad" ve "Numara" sütunları bulunamadı.'}), 400
+
+        # Mevcut listeyi sil ve yenisini ekle
+        YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).delete()
+        
+        sayac = 0
+        for _, row in df.iterrows():
+            try:
+                raw_no = str(row.iloc[1]).strip() if len(row) > 1 and not pd.isna(row.iloc[1]) else ""
+                raw_ad = str(row.iloc[2]).strip() if len(row) > 2 and not pd.isna(row.iloc[2]) else ""
+                raw_soyad = str(row.iloc[3]).strip() if len(row) > 3 and not pd.isna(row.iloc[3]) else ""
+                
+                no = raw_no if raw_no != 'nan' else ""
+                ad_soyad = (f"{raw_ad} {raw_soyad}").strip()
+                
+                if ad_soyad and ad_soyad != 'nan' and len(ad_soyad) > 1:
+                    yeni_ogr = YoklamaOgrenci(
+                        oturum_id=oturum_id,
+                        ad_soyad=ad_soyad.upper(),
+                        numara=no
+                    )
+                    db.session.add(yeni_ogr)
+                    sayac += 1
+            except: continue
+        
+        oturum.dosya_yolu = filename
+        db.session.commit()
+        
+        return jsonify({'basarili': True, 'mesaj': f'{sayac} öğrenci başarıyla güncellendi.', 'dosya_adi': filename})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
 @app.route('/api/yoklama/kayit-ol', methods=['POST'])
 def yoklama_kayit_ol():
     try:
@@ -1135,42 +1337,77 @@ def yoklama_kayit_ol():
         if not oturum or not oturum.aktif:
             return jsonify({'basarili': False, 'mesaj': 'Oturum kapalı veya geçersiz.'}), 403
 
-        # Konum doğrulaması
+        # KATMAN 1: ÖĞRENCİ LİSTESİ DOĞRULAMASI (KAPSAYICI DENETİM)
+        ad_soyad_raw = str(data.get('ad_soyad', '')).strip().lower()
+        numara_raw = str(data.get('numara_kurum', '')).strip()
+        liste_disi = False
+        
+        # Eğer bu ders için Excel mühürlendiyse (Liste doluysa)
+        liste_sayisi = YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).count()
+        if liste_sayisi > 0:
+            eslesen_ogr = YoklamaOgrenci.query.filter(
+                YoklamaOgrenci.oturum_id == oturum_id,
+                (YoklamaOgrenci.numara == numara_raw) | (db.func.lower(YoklamaOgrenci.ad_soyad) == ad_soyad_raw)
+            ).first()
+            
+            if eslesen_ogr:
+                # Listede VAR: Veriyi sarsılmaz şekilde sabitle
+                data['ad_soyad'] = eslesen_ogr.ad_soyad
+                data['numara_kurum'] = eslesen_ogr.numara
+                liste_disi = False
+            else:
+                # Listede YOK: Kayda izin ver ama "Liste Dışı" olarak işaretle
+                liste_disi = True
+        
+        # KATMAN 2: KONUM DOĞRULAMASI (OPTİYONEL AMA SIKIDIR)
         user_lat = data.get('lat')
         user_lng = data.get('lng')
-        
         mesafe = 0
         mesafe_uygun = True
         
-        if oturum.hedef_lat and oturum.hedef_lng:
-            if not user_lat or not user_lng:
-                return jsonify({'basarili': False, 'mesaj': 'Konum bilgisi gerekli.'}), 400
-            
-            mesafe = haversine(oturum.hedef_lng, oturum.hedef_lat, user_lng, user_lat)
-            
-            if mesafe > oturum.tolerans_metre:
-                mesafe_uygun = False
+        if oturum.konum_dogrulama and oturum.hedef_lat and oturum.hedef_lng:
+            if user_lat and user_lng:
+                mesafe = haversine(oturum.hedef_lng, oturum.hedef_lat, user_lng, user_lat)
+                if mesafe > oturum.tolerans_metre:
+                    mesafe_uygun = False
+            else:
+                return jsonify({'basarili': False, 'mesaj': 'Konum paylaşımı zorunludur.'}), 400
         
-        # Mükerrer Kayıt Kontrolü (Aynı oturumda aynı isim/numara)
-        mevcut = YoklamaKayit.query.filter_by(
-            oturum_id=oturum_id, 
-            hafta_id=hafta_id, # Hafta bazında mükerrer kontrol
-            numara_kurum=data.get('numara')
+        if not mesafe_uygun:
+            return jsonify({'basarili': False, 'mesaj': f'Konum derslikten çok uzak! ({int(mesafe)}m)'}), 400
+
+        # --- GÜVENLİK DOĞRULANDI, KAYIT AKTİFA ALINIYOR ---
+        mevcut_kayit = YoklamaKayit.query.filter_by(
+            oturum_id=oturum_id,
+            hafta_id=hafta_id,
+            numara_kurum=data.get('numara_kurum')
         ).first()
         
-        if mevcut:
-            return jsonify({'basarili': False, 'mesaj': 'Daha önce kayıt yapılmış.'}), 400
+        if mevcut_kayit:
+            return jsonify({'basarili': False, 'mesaj': 'Bu hafta için zaten kaydınız alınmış.'}), 400
+
+        yeni_kayit = YoklamaKayit(
+            oturum_id=oturum_id,
+            hafta_id=hafta_id,
+            ad_soyad=data.get('ad_soyad'), # Sarsılmaz veya öğrencinin girişi
+            numara_kurum=data.get('numara_kurum'),
+            lat=user_lat,
+            lng=user_lng,
+            mesafe=mesafe,
+            ip_adresi=request.remote_addr,
+            tarayici_bilgisi=request.user_agent.string,
+            liste_disi=liste_disi # Listede var mı yok mu?
+        )
 
         if not mesafe_uygun:
             return jsonify({'basarili': False, 'mesaj': f'Konumunuz çok uzak! Lütfen sınıfta olduğunuza emin olun. (Mesafe: {int(mesafe)}m)'}), 400
 
-        # Kaydet
-        # Eğer hafta_id varsa, onu da kaydet
+        # Kaydet ve Mühürle (Sarsılmaz Kayıt)
         yeni_kayit = YoklamaKayit(
             oturum_id=oturum_id,
             hafta_id=hafta_id,
-            ad_soyad=data.get('adSoyad'),
-            numara_kurum=data.get('numara'),
+            ad_soyad=data.get('ad_soyad'),
+            numara_kurum=data.get('numara_kurum'),
             lat=user_lat,
             lng=user_lng,
             mesafe=mesafe,
@@ -1178,6 +1415,7 @@ def yoklama_kayit_ol():
             tarayici_bilgisi=request.user_agent.string
         )
         db.session.add(yeni_kayit)
+        db.session.commit()
         return jsonify({'basarili': True, 'mesaj': 'Kaydınız başarıyla alındı.'})
         
     except Exception as e:
@@ -1209,8 +1447,18 @@ def ders_detay(oturum_id):
         ogrenciler = YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).all()
         kayitlar = YoklamaKayit.query.filter_by(oturum_id=oturum_id).all()
         
-        # Basit serializasyon
-        haftalar_data = [{'id': h.id, 'hafta_no': h.hafta_no, 'aktif': h.aktif} for h in haftalar]
+        # Haftaları detaylı dönerken (is_current kontrolüyle)
+        guncel_tarih = oturum.tarih.date() if oturum.tarih else None
+        haftalar_data = []
+        for h in haftalar:
+            haftalar_data.append({
+                'id': h.id, 
+                'hafta_no': h.hafta_no, 
+                'baslik': h.baslik,
+                'tarih': h.tarih.strftime('%d.%m.%Y') if h.tarih else None,
+                'aktif': h.aktif,
+                'is_current': h.tarih == guncel_tarih if (h.tarih and guncel_tarih) else False
+            })
         ogrenciler_data = [{'id': o.id, 'ad_soyad': o.ad_soyad, 'numara': o.numara} for o in ogrenciler]
         yoklamalar_data = [{'hafta_id': k.hafta_id, 'numara': k.numara_kurum, 'ad_soyad': k.ad_soyad} for k in kayitlar]
         
@@ -1234,11 +1482,18 @@ def hafta_baslat():
         oturum = YoklamaOturumu.query.get(oturum_id)
         if not oturum: return jsonify({'basarili': False}), 404
         
+        # Hafta tarihini kontrol et (Eğer yoksa bugünü ata)
+        hafta = YoklamaHaftasi.query.get(hafta_id)
+        if hafta and not hafta.tarih:
+            hafta.tarih = datetime.now().date()
+            hafta.baslik = f"{hafta.hafta_no}. Hafta ({hafta.tarih.strftime('%d.%m.%Y')})"
+            db.session.commit()
+            
         # Token oluştur (Hafta ID'sini de ekleyerek)
         identity = f"{oturum.id}:{hafta_id}" # Format: oturum_id:hafta_id
         
         # Token süresi oturum ayarlarından
-        expires = datetime.timedelta(minutes=oturum.gecerlilik_suresi)
+        expires = timedelta(minutes=oturum.gecerlilik_suresi)
         
         token = create_access_token(
             identity=identity, 
@@ -1250,30 +1505,249 @@ def hafta_baslat():
     except Exception as e:
         return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+@app.route('/api/yoklama/hafta-tarih-guncelle', methods=['POST'])
+def hafta_tarih_guncelle():
+    """Bir haftanın tarihini günceller"""
+    try:
+        data = request.json
+        hafta_id = data.get('haftaId')
+        tarih_str = data.get('tarih')
         
-        # Manuel Migration Kontrolü (SQLite için)
-        # oturum_sahibi sütunu yoksa ekle
-        try:
-            with db.engine.connect() as conn:
-                # Sütun var mı kontrol et (PRAGMA table_info)
-                res = conn.execute(db.text("PRAGMA table_info(yoklama_oturumlari)"))
-                columns = [row[1] for row in res]
-                if 'oturum_sahibi' not in columns:
-                    conn.execute(db.text("ALTER TABLE yoklama_oturumlari ADD COLUMN oturum_sahibi VARCHAR(200) DEFAULT 'Erdem ALPAR'"))
-                    print("Migration: oturum_sahibi sütunu eklendi.")
-                
-                # YoklamaKayit hafta_id kontrolü
-                res_kayit = conn.execute(db.text("PRAGMA table_info(yoklama_kayitlari)"))
-                columns_kayit = [row[1] for row in res_kayit]
-                if 'hafta_id' not in columns_kayit:
-                    conn.execute(db.text("ALTER TABLE yoklama_kayitlari ADD COLUMN hafta_id INTEGER REFERENCES yoklama_haftalari(id)"))
-                    print("Migration: yoklama_kayitlari -> hafta_id sütunu eklendi.")
-
-        except Exception as e:
-            print(f"Migration hatası (önemsiz olabilir): {e}")
+        hafta = YoklamaHaftasi.query.get(hafta_id)
+        if not hafta:
+            return jsonify({'basarili': False, 'mesaj': 'Hafta bulunamadı'}), 404
             
-        # Varsayılan kullanıcıyı oluştur
+        if tarih_str:
+            hafta.tarih = datetime.strptime(tarih_str, '%Y-%m-%d').date()
+            # Başlık güzelleştirme
+            hafta.baslik = f"{hafta.hafta_no}. Hafta ({datetime.strptime(tarih_str, '%Y-%m-%d').strftime('%d.%m.%Y')})"
+        else:
+            hafta.tarih = None
+            hafta.baslik = f"{hafta.hafta_no}. Hafta"
+            
+        db.session.commit()
+        return jsonify({'basarili': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+# --- YOKLAMA YÖNETİMİ (ADMİN) APİ'LERİ ---
+
+@app.route('/api/admin/oturum-listesi')
+def admin_oturum_listesi():
+    oturumlar = YoklamaOturumu.query.order_by(YoklamaOturumu.id.desc()).all()
+    return jsonify([{'id': o.id, 'baslik': o.baslik} for o in oturumlar])
+
+@app.route('/api/admin/hafta-listesi/<int:oturum_id>')
+def admin_hafta_listesi(oturum_id):
+    haftalar = YoklamaHaftasi.query.filter_by(oturum_id=oturum_id).order_by(YoklamaHaftasi.hafta_no).all()
+    return jsonify([{'id': h.id, 'no': h.hafta_no, 'baslik': h.baslik} for h in haftalar])
+
+@app.route('/api/admin/yoklama-kayitlari/<int:oturum_id>/<int:hafta_id>')
+def admin_yoklama_kayitlari(oturum_id, hafta_id):
+    # Bu oturuma ait resmi liste (Excel)
+    ogrenciler = YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).all()
+    # Bu oturuma ve haftaya ait gerçek kayıtlar
+    kayitlar = YoklamaKayit.query.filter_by(oturum_id=oturum_id, hafta_id=hafta_id).all()
+    
+    return jsonify({
+        'ogrenciler': [{'id': o.id, 'ad_soyad': o.ad_soyad, 'numara': o.numara} for o in ogrenciler],
+        'kayitlar': [{
+            'id': k.id, 
+            'ad_soyad': k.ad_soyad, 
+            'numara': k.numara_kurum,
+            'olusturma_tarihi': k.giris_saati.strftime('%d.%m.%Y %H:%M') if k.giris_saati else '-',
+            'liste_disi': k.liste_disi
+        } for k in kayitlar]
+    })
+
+@app.route('/api/admin/yoklama-kayit-sil/<int:kayit_id>', methods=['DELETE'])
+def admin_yoklama_sil(kayit_id):
+    kayit = YoklamaKayit.query.get_or_404(kayit_id)
+    db.session.delete(kayit)
+    db.session.commit()
+    return jsonify({'basarili': True, 'mesaj': 'Kayıt silindi.'})
+
+@app.route('/api/admin/yoklama-manuel-durum', methods=['POST'])
+@login_required
+@admin_required
+def admin_yoklama_manuel():
+    try:
+        data = request.json
+        oturum_id = data.get('oturum_id')
+        hafta_id = data.get('hafta_id')
+        numara = data.get('numara')
+        ad_soyad = data.get('ad_soyad')
+        durum = data.get('durum') # 'geldi' veya 'gelmedi'
+        tarih_saat_str = data.get('tarih_saat')
+        
+        if not all([oturum_id, hafta_id, numara]):
+            return jsonify({'basarili': False, 'mesaj': 'Eksik veri'}), 400
+
+        if durum == 'geldi':
+            # Önce varsa temizle (Mükerrer olmasın)
+            YoklamaKayit.query.filter_by(oturum_id=oturum_id, hafta_id=hafta_id, numara_kurum=numara).delete()
+            
+            manuel_zaman = datetime.now()
+            if tarih_saat_str:
+                try:
+                    manuel_zaman = datetime.strptime(tarih_saat_str, '%Y-%m-%dT%H:%M')
+                except: pass
+            
+            yeni = YoklamaKayit(
+                oturum_id=oturum_id,
+                hafta_id=hafta_id,
+                numara_kurum=numara,
+                ad_soyad=ad_soyad,
+                ip_adresi='ADMIN-MANUEL',
+                giris_saati=manuel_zaman
+            )
+            db.session.add(yeni)
+        else:
+            # Kaydı sil
+            YoklamaKayit.query.filter_by(oturum_id=oturum_id, hafta_id=hafta_id, numara_kurum=numara).delete()
+        
+        db.session.commit()
+        return jsonify({'basarili': True, 'mesaj': 'İşlem başarılı.'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+@app.route('/api/admin/yoklama-excel/<int:oturum_id>')
+@login_required
+@admin_required
+def admin_yoklama_excel(oturum_id):
+    try:
+        import io
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
+        from flask import send_file
+
+        oturum = YoklamaOturumu.query.get_or_404(oturum_id)
+        ogrenciler = YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).order_by(YoklamaOgrenci.ad_soyad).all()
+        haftalar = YoklamaHaftasi.query.filter_by(oturum_id=oturum_id).order_by(YoklamaHaftasi.hafta_no).all()
+        kayitlar = YoklamaKayit.query.filter_by(oturum_id=oturum_id).all()
+
+        # Liste Dışı kayıtları tespit et (Ogrenci tablosunda yoksa)
+        liste_disi_kayitlar = {}
+        for k in kayitlar:
+            is_extra = k.liste_disi or not any(o.numara == k.numara_kurum for o in ogrenciler)
+            if is_extra:
+                 key = f"{k.numara_kurum}_{k.ad_soyad}"
+                 if key not in liste_disi_kayitlar:
+                     liste_disi_kayitlar[key] = {'numara': k.numara_kurum, 'ad_soyad': k.ad_soyad, 'is_extra': True}
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Yoklama Listesi"
+
+        # Stil Tanımlamaları
+        thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+        header_font = Font(bold=True, size=10)
+        title_font = Font(bold=True, size=14)
+        info_font = Font(bold=True, size=9)
+        center_align = Alignment(horizontal='center', vertical='center')
+        left_align = Alignment(horizontal='left', vertical='center')
+
+        # 1. SATIR: ANA BAŞLIK
+        ws['A1'] = "Ders Yoklama Listesi"
+        ws['A1'].font = title_font
+        ws['A1'].alignment = center_align
+        ws.merge_cells('A1:T1')
+        
+        ws['S2'] = datetime.now().strftime('%d.%m.%Y')
+        ws['S2'].font = Font(color='FF0000', bold=True, size=10)
+        ws['S2'].alignment = Alignment(horizontal='right')
+
+        # 3-5. SATIRLAR: DERS BİLGİLERİ
+        ws['A3'] = "Fakülte/Yüksekokul"; ws['A3'].font = info_font; ws.merge_cells('A3:B3')
+        ws['C3'] = ":"; 
+        ws['D3'] = "TAPU KADASTRO YÜKSEKOKULU"; ws.merge_cells('D3:H3')
+        
+        ws['A4'] = "Program"; ws['A4'].font = info_font; ws.merge_cells('A4:B4')
+        ws['C4'] = ":"; 
+        ws['D4'] = "TAPU KADASTRO"; ws.merge_cells('D4:H4')
+
+        ws['L3'] = oturum.baslik.split(' ')[0] if ' ' in oturum.baslik else oturum.baslik; ws.merge_cells('L3:M3')
+        
+        ws['I4'] = "Şube Kodu"; ws['I4'].font = info_font; ws.merge_cells('I4:J4')
+        ws['K4'] = ":"; 
+        ws['L4'] = "1"; ws.merge_cells('L4:M4')
+
+        ws['N3'] = "Ders Adı"; ws['N3'].font = info_font; ws.merge_cells('N3:O3')
+        ws['P3'] = ":"; 
+        ws['Q3'] = oturum.baslik; ws.merge_cells('Q3:T3')
+        
+        ws['N4'] = "Öğretim Elemanı"; ws['N4'].font = info_font; ws.merge_cells('N4:O4')
+        ws['P4'] = ":"; 
+        ws['Q4'] = "Öğr.Gör. ERDEM ALPAR"; ws.merge_cells('Q4:T4')
+
+        # 7. SATIR: TABLO BAŞLIKLARI
+        headers = ["#", "Öğrenci No", "Adı Soyadı", "Alış/Ö.Not", "Dvmsz. Durum"]
+        for j in range(1, 15): headers.append(f"{j}.Hafta")
+        
+        for col, value in enumerate(headers, 1):
+            cell = ws.cell(row=7, column=col, value=value)
+            cell.font = Font(bold=True, size=8)
+            cell.alignment = center_align
+            cell.border = thin_border
+            cell.fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+
+        # ÖĞRENCİ VERİLERİ
+        tum_liste = []
+        for o in ogrenciler: tum_liste.append({'numara': o.numara, 'ad_soyad': o.ad_soyad, 'is_extra': False})
+        for l_extra in liste_disi_kayitlar.values(): tum_liste.append(l_extra)
+        
+        for idx, ogr in enumerate(tum_liste, 1):
+            row_idx = 7 + idx
+            ws.cell(row=row_idx, column=1, value=idx).alignment = center_align
+            ws.cell(row=row_idx, column=2, value=ogr['numara']).alignment = left_align
+            
+            ad_soyad_val = ogr['ad_soyad']
+            if ogr['is_extra']: ad_soyad_val += " (L.DIŞI)"
+            
+            cell_ad = ws.cell(row=row_idx, column=3, value=ad_soyad_val)
+            if ogr['is_extra']: cell_ad.font = Font(color="FF8C00", italic=True, size=9)
+            
+            ws.cell(row=row_idx, column=4, value="").alignment = center_align
+            ws.cell(row=row_idx, column=5, value="").alignment = center_align
+
+            # Haftalık Katılım
+            for h_idx, h in enumerate(haftalar, 1):
+                if h_idx > 14: break
+                
+                kayit_var = any(
+                    k.hafta_id == h.id and 
+                    (str(k.numara_kurum).strip() == str(ogr['numara']).strip() or 
+                     str(k.ad_soyad).strip().lower() == str(ogr['ad_soyad']).strip().lower())
+                    for k in kayitlar
+                )
+                
+                cell = ws.cell(row=row_idx, column=5 + h_idx, value="✓" if kayit_var else "")
+                cell.alignment = center_align
+                if kayit_var: cell.font = Font(bold=True, color="008000")
+
+            # Border'lar
+            for col in range(1, 20):
+                ws.cell(row=row_idx, column=col).border = thin_border
+
+        # Sütun Genişlikleri
+        ws.column_dimensions['A'].width = 4
+        ws.column_dimensions['B'].width = 15
+        ws.column_dimensions['C'].width = 35
+        for col_letter in 'FGHIJKLMNOPQRS':
+            ws.column_dimensions[col_letter].width = 8
+
+        excel_io = io.BytesIO()
+        wb.save(excel_io)
+        excel_io.seek(0)
+        
+        filename = f"{oturum.baslik.replace(' ', '_')}_Yoklama_Raporu.xlsx"
+        return send_file(excel_io, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+    except Exception as e:
+        print("EXCEL HATASI:", e)
+        return f"Hata: {str(e)}", 400
+
+if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

@@ -43,10 +43,10 @@
 
                         <!-- Düzenle Butonu -->
                         <button
-                            onclick="oturumDuzenleModalAc('{{ oturum.id }}', '{{ oturum.baslik }}', '{{ oturum.aciklama }}', '{{ oturum.gecerlilik_suresi }}', '{{ oturum.tolerans_metre }}', '{{ oturum.oturum_sahibi }}')"
-                            class="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
+                            onclick="oturumDuzenleModalAc('{{ oturum.id }}')"
+                            class="p-1 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-full border border-indigo-100 transition-all shadow-sm"
                             title="Oturumu Düzenle">
-                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
                         </button>
 
                         <!-- Sil Butonu -->
@@ -58,20 +58,21 @@
                     </div>
                 </div>
 
-                <div>
+                <div class="space-y-3">
                     <h3 class="font-bold text-slate-800 text-lg truncate">{{ oturum.baslik }}</h3>
-                    <p class="text-slate-500 text-sm line-clamp-2 mt-1">{{ oturum.aciklama }}</p>
-                </div>
-
-                <div class="flex items-center gap-4 text-xs text-slate-400">
-                    <div class="flex items-center gap-1">
-                        <i data-lucide="users" class="w-3 h-3"></i>
-                        <span>{{ oturum.kayitlar|length }} Katılımcı</span>
+                    <div class="flex flex-wrap gap-4 text-xs text-slate-500 font-medium">
+                        <div class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-500"></i>
+                            <span>{{ oturum.tarih.strftime('%d.%m.%Y') if oturum.tarih else 'Tarih Yok' }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded">
+                            <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-500"></i>
+                            <span>{{ oturum.kayitlar|length }} Katılımcı</span>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-1">
-                        <i data-lucide="clock" class="w-3 h-3"></i>
-                        <span>{{ oturum.tarih.strftime('%d.%m.%Y %H:%M') }}</span>
-                    </div>
+                    {% if oturum.aciklama and oturum.aciklama != 'None' %}
+                    <p class="text-slate-500 text-sm line-clamp-2">{{ oturum.aciklama }}</p>
+                    {% endif %}
                 </div>
 
                 <div class="pt-4 border-t border-slate-50 flex gap-2">
@@ -100,40 +101,116 @@
     </div>
 </div>
 
-<!-- Ayarlar Modalı (JSON Kayıt) -->
+<!-- Ayarlar Modalı (Gelişmiş Yönetim Paneli) -->
 <div id="ayarlarModal"
-    class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl animate-slide-up">
-        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-            <h3 class="text-xl font-bold text-slate-800">Yoklama Ayarları</h3>
+    class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[120] flex items-center justify-center p-2 md:p-6">
+    <div class="bg-white w-full max-w-[85vw] h-[90vh] rounded-[40px] shadow-2xl animate-scale-up flex flex-col overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
+            <h3 class="text-xl font-bold text-slate-800">Yoklama Ayarları & Yönetimi</h3>
             <button onclick="modalKapat('ayarlarModal')"
                 class="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-all">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
         </div>
-        <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-            <!-- Yıl Tanımlaması -->
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Eğitim Öğretim Yılı Ekle</label>
-                <div class="flex gap-2">
-                    <input type="text" id="setting_yil" placeholder="Örn: 2025-2026"
-                        class="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
-                    <button onclick="yilEkle()"
-                        class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl font-bold hover:bg-indigo-100 transition-all hover:scale-105 active:scale-95">
-                        Ekle
-                    </button>
+
+        <!-- Sekme Başlıkları -->
+        <div class="flex border-b border-slate-100 bg-slate-50 shrink-0">
+            <button onclick="ayarlarTabDegistir('yil')" id="tab-yil"
+                class="flex-1 px-6 py-4 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-all">
+                Yıl Ayarları
+            </button>
+            <button onclick="ayarlarTabDegistir('yonetim')" id="tab-yonetim"
+                class="flex-1 px-6 py-4 text-sm font-bold text-slate-500 hover:text-indigo-600 border-b-2 border-transparent transition-all">
+                Yoklama Yönetimi (Manuel)
+            </button>
+        </div>
+
+        <div class="p-6 flex-1 overflow-y-auto custom-scrollbar">
+            <!-- TAB: YIL AYARLARI -->
+            <div id="ayar-content-yil" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Eğitim Öğretim Yılı Ekle</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="setting_yil" placeholder="Örn: 2025-2026"
+                            class="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <button onclick="yilEkle()"
+                            class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl font-bold hover:bg-indigo-100 transition-all">
+                            Ekle
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Tanımlı Yıllar</h4>
+                    <ul id="kayitli_yillar_listesi" class="space-y-2">
+                        <li class="text-slate-500 text-sm italic p-2 text-center">Yükleniyor...</li>
+                    </ul>
                 </div>
             </div>
 
-            <div class="pt-4 border-t border-slate-100">
-                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Tanımlı Yıllar</h4>
-                <ul id="kayitli_yillar_listesi" class="space-y-2 max-h-[200px] overflow-y-auto">
-                    <!-- JS ile dolacak -->
-                    <li class="text-slate-500 text-sm italic p-2 text-center">Yükleniyor...</li>
-                </ul>
+            <!-- TAB: YOKLAMA YÖNETİMİ -->
+            <div id="ayar-content-yonetim" class="hidden space-y-6">
+                <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex items-center gap-3">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-indigo-600"></i>
+                    <p class="text-xs text-indigo-800 font-medium">Bu panelden manuel katılım mühürleyebilir veya kayıtları silebilirsiniz.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ders Seçin</label>
+                        <select id="yoklama_oturum_id" onchange="yoklamaDersSecildi()"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 outline-none">
+                            <option value="">Lütfen ders seçin...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Hafta Seçin</label>
+                        <select id="yoklama_hafta_id" onchange="yoklamaHaftaSecildi()"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 outline-none" disabled>
+                            <option value="">Önce ders seçin...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Manuel Kayıt Zamanı</label>
+                        <input type="datetime-local" id="yoklama_manuel_zaman"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-emerald-50/20 text-emerald-900 outline-none">
+                    </div>
+                    <!-- Liste Güncelleme -->
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Asıl Listeyi Güncelle</label>
+                        <div class="flex gap-1">
+                            <input type="file" id="yoklama_yeni_liste" accept=".xlsx, .xls" class="hidden" onchange="listeGuncelle()">
+                            <button onclick="document.getElementById('yoklama_yeni_liste').click()" 
+                                class="flex-1 bg-white border border-slate-200 p-2 rounded-lg text-xs font-bold hover:bg-slate-50 text-slate-600 flex items-center justify-center gap-2">
+                                <i data-lucide="upload-cloud" class="w-3 h-3 text-indigo-500"></i>
+                                Excel Yükle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="yoklama_yonetim_liste" class="hidden border border-slate-100 rounded-xl overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 text-slate-400 font-bold uppercase border-b">
+                            <tr>
+                                <th class="px-4 py-3">Öğrenci</th>
+                                <th class="px-4 py-3 text-center">Durum</th>
+                                <th class="px-4 py-3 text-center">Katılım Zamanı</th>
+                                <th class="px-4 py-3 text-center">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="yoklama_tablo_body" class="divide-y divide-slate-100">
+                            <!-- JS ile dolacak -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="yoklama_bos_uyari" class="text-center py-10 text-slate-400 border border-dashed border-slate-100 rounded-xl">
+                    <p class="text-xs">Lütfen yönetmek istediğiniz dersi ve haftayı seçin.</p>
+                </div>
             </div>
         </div>
-        <div class="p-6 bg-slate-50 rounded-b-3xl">
+
+        <div class="p-6 bg-slate-50 rounded-b-3xl shrink-0">
             <button onclick="modalKapat('ayarlarModal')"
                 class="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-all">
                 Kapat
@@ -145,8 +222,8 @@
 <!-- Yeni Oturum Modalı -->
 <div id="oturumModal"
     class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl animate-slide-up">
-        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl animate-slide-up flex flex-col max-h-[90vh]">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
             <h3 id="oturum_modal_baslik" class="text-xl font-bold text-slate-800">Yeni Oturum Başlat</h3>
             <button onclick="modalKapat('oturumModal')"
                 class="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-all">
@@ -156,7 +233,9 @@
 
         <!-- Gizli ID alanı (Düzenleme için) -->
         <input type="hidden" id="oturum_edit_id" value="">
-        <div class="p-6 space-y-4">
+        
+        <!-- İçerik Bölümü (Kaydırılabilir) -->
+        <div class="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
             <!-- Yıl Seçimi -->
             <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-1">Eğitim Yılı</label>
@@ -175,12 +254,33 @@
 
             <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-1">Oturum Başlığı</label>
-                <input type="text" id="oturum_baslik" placeholder="Örn: Veri Yapıları Dersi - Hafta 3"
+                <input type="text" id="oturum_baslik" placeholder="Örn: Veri Yapıları Dersi"
                     class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
             </div>
+            <!-- Haftalık Tarih Girişleri (14 Hafta) -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <label class="block text-sm font-bold text-slate-700">Ders Haftaları ve Tarihleri</label>
+                    <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-black uppercase tracking-widest">14 Hafta</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-1 custom-scrollbar border-y border-slate-50 py-2">
+                    <script>
+                        for(let i=1; i<=14; i++) {
+                            document.write(`
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1 group hover:border-indigo-200 transition-all">
+                                    <span class="text-[10px] font-black text-slate-400 group-hover:text-indigo-500 uppercase tracking-tighter">${i}. HAFTA</span>
+                                    <input type="date" id="hafta_tarih_${i}" 
+                                        class="w-full bg-white text-xs p-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-700">
+                                </div>
+                            `);
+                        }
+                    </script>
+                </div>
+            </div>
             <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Açıklama (Opsiyonel)</label>
-                <textarea id="oturum_aciklama" rows="2"
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Ek Not (Opsiyonel)</label>
+                <textarea id="oturum_aciklama" rows="2" placeholder="Süreçle ilgili notlar..."
                     class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"></textarea>
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -202,17 +302,31 @@
                     işaretleyin.</p>
             </div>
 
-            <!-- Dosya Yükleme (Oturum Modalı) -->
             <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Katılımcı Listesi (Excel -
-                    Opsiyonel)</label>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Katılımcı Listesi (Excel - Opsiyonel)</label>
+                <div id="yuklu_dosya_bilgisi" class="hidden mb-2 p-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium flex items-center gap-2 border border-emerald-100 shadow-sm">
+                    <i data-lucide="file-check" class="w-4 h-4"></i>
+                    <span id="yuklu_dosya_metni">Şu an bir liste yüklü.</span>
+                </div>
                 <div class="relative">
                     <input type="file" id="oturum_dosya" accept=".xlsx, .xls"
-                        class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all" />
+                        class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all border border-slate-100 rounded-xl" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 pt-2">
+                <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <input type="checkbox" id="oturum_konum_kontrol" checked class="w-5 h-5 accent-indigo-600 rounded">
+                    <label for="oturum_konum_kontrol" class="text-sm font-semibold text-slate-700 cursor-pointer">Mesafe Kontrolü</label>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <input type="checkbox" id="oturum_sure_kontrol" checked class="w-5 h-5 accent-indigo-600 rounded">
+                    <label for="oturum_sure_kontrol" class="text-sm font-semibold text-slate-700 cursor-pointer">Süre Kısıtı</label>
                 </div>
             </div>
         </div>
-        <div class="p-6 bg-slate-50 rounded-b-3xl">
+
+        <div class="p-6 bg-slate-50 rounded-b-3xl shrink-0">
             <button onclick="oturumKaydet()" id="oturum_kaydet_btn"
                 class="w-full gradient-primary text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95">
                 Oturumu Başlat
@@ -223,31 +337,45 @@
 
 <!-- QR Kod Modalı -->
 <div id="qrModal"
-    class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl text-center">
-        <div class="p-6">
-            <h3 id="qr_baslik" class="text-xl font-bold text-slate-800 mb-2 truncate">Yoklama QR Kodu</h3>
-            <div class="relative bg-slate-50 p-6 rounded-2xl mb-4 border-2 border-dashed border-slate-200">
-                <img id="qr_gorsel" src="" class="w-full h-auto rounded-lg shadow-sm" alt="Yoklama QR">
+    class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[200] flex items-center justify-center p-2">
+    <div class="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl animate-scale-up overflow-hidden">
+        <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <h3 id="qr_baslik" class="text-3xl font-black text-slate-800 tracking-tight">Yoklama QR Kod</h3>
+            <button onclick="modalKapat('qrModal')"
+                class="p-3 hover:bg-red-50 hover:text-red-600 rounded-full text-slate-400 transition-all">
+                <i data-lucide="x" class="w-10 h-10"></i>
+            </button>
+        </div>
 
-                <!-- Geri Sayım Overlay -->
-                <div class="absolute top-2 right-2 bg-slate-900/80 text-white text-xs font-mono px-2 py-1 rounded">
+        <div class="p-4 md:p-12 flex flex-col items-center justify-center space-y-8">
+            <!-- QR Kod Çerçevesi (Devasa) -->
+            <div class="relative bg-white p-4 md:p-10 rounded-[50px] shadow-inner border-8 border-slate-50 w-full max-w-[700px] aspect-square flex items-center justify-center group">
+                <img id="qr_gorsel" src="" class="w-full h-full object-contain image-render-pixel" alt="QR Kod">
+                
+                <!-- Geri Sayım Rozeti -->
+                <div class="absolute top-6 right-6 bg-slate-900 text-white text-2xl font-black px-5 py-2 rounded-2xl shadow-xl border-4 border-white">
                     <span id="qr_sayac">10</span>s
                 </div>
             </div>
 
-            <!-- Progress Bar -->
-            <div class="w-full bg-slate-100 rounded-full h-2 mb-4 overflow-hidden">
-                <div id="qr_progress" class="bg-indigo-600 h-2 rounded-full transition-all duration-100 ease-linear"
-                    style="width: 100%"></div>
+            <div class="w-full max-w-[700px] space-y-6 text-center">
+                <!-- Progress Bar (Dev) -->
+                <div class="w-full bg-slate-100 h-6 rounded-full overflow-hidden p-1 shadow-inner border border-slate-200">
+                    <div id="qr_progress" class="gradient-primary h-full rounded-full transition-all duration-100 ease-linear shadow-sm"
+                        style="width: 100%"></div>
+                </div>
+                
+                <p class="text-xl font-medium text-slate-500 animate-pulse">
+                    <i data-lucide="shield-check" class="w-6 h-6 inline-block mr-2 text-indigo-500"></i>
+                    Güvenlik nedeniyle her 10 saniyede bir otomatik yenilenir.
+                </p>
             </div>
-
-            <p class="text-sm text-slate-500">QR kod güvenlik nedeniyle her 10 saniyede bir yenilenir.</p>
         </div>
-        <div class="p-6 pt-0">
+
+        <div class="p-8 bg-slate-50/80 border-t border-slate-100">
             <button onclick="modalKapat('qrModal')"
-                class="w-full bg-slate-100 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-200 transition-all">
-                Kapat
+                class="w-full bg-slate-900 text-white py-6 rounded-3xl font-black text-2xl shadow-xl hover:bg-slate-800 transition-all active:scale-95 uppercase tracking-widest">
+                Ekranı Kapat
             </button>
         </div>
     </div>
@@ -255,17 +383,24 @@
 
 <!-- Katılımcı Listesi Modalı -->
 <div id="katilimciModal"
-    class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-6xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+    class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[150] flex items-center justify-center p-2 md:p-6">
+    <div class="bg-white w-full max-w-[95vw] h-[90vh] rounded-[40px] shadow-2xl flex flex-col overflow-hidden animate-scale-up">
         <div class="p-6 border-b border-slate-100 flex justify-between items-center">
             <div>
                 <h3 id="katilimci_baslik" class="text-xl font-bold text-slate-800">Ders Detayları</h3>
                 <p class="text-sm text-slate-500">Haftalık katılım durumunu görüntüleyin ve yönetin.</p>
             </div>
-            <button onclick="modalKapat('katilimciModal')"
-                class="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-all">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
+            <div class="flex items-center gap-3">
+                <button id="excel_indir_btn" onclick="yoklamaExcelIndir(currentOturumId)"
+                    class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    Excel Raporu İndir
+                </button>
+                <button onclick="modalKapat('katilimciModal')"
+                    class="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-all">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
         </div>
         <div class="p-6 overflow-auto flex-1">
             <table class="w-full border-collapse">
@@ -300,8 +435,10 @@
     let currentLng = null;
     let map = null;
     let marker = null;
-    let qrInterval = null; // For the QR code refresh loop
+    let qrInterval = null;
+    let currentOturumId = null; // Global oturum takibi için
     let progressInterval = null; // For the progress bar animation
+    let countdownInterval = null; // For the countdown timer animation
 
     // Modal Kapatma Fonksiyonu (Global ve Güvenli)
     function modalKapat(id) {
@@ -364,6 +501,8 @@
     }
 
     function markerAyarla(lat, lng) {
+        if (!map) return; // Harita yoksa işaretleme yapma (Hata önleyici)
+        
         currentLat = lat;
         currentLng = lng;
 
@@ -377,6 +516,210 @@
                 currentLng = position.lng;
             });
         }
+    }
+
+    function ayarlarModalAc() {
+        yilListesiGuncelle();
+        ayarlarTabDegistir('yil'); // Varsayılan sekme
+        document.getElementById('ayarlarModal').classList.remove('hidden');
+    }
+
+    function ayarlarTabDegistir(tab) {
+        document.getElementById('ayar-content-yil').classList.add('hidden');
+        document.getElementById('ayar-content-yonetim').classList.add('hidden');
+        document.getElementById('tab-yil').classList.remove('text-indigo-600', 'border-indigo-600');
+        document.getElementById('tab-yil').classList.add('text-slate-500', 'border-transparent');
+        document.getElementById('tab-yonetim').classList.remove('text-indigo-600', 'border-indigo-600');
+        document.getElementById('tab-yonetim').classList.add('text-slate-500', 'border-transparent');
+
+        if (tab === 'yil') {
+            document.getElementById('ayar-content-yil').classList.remove('hidden');
+            document.getElementById('tab-yil').classList.add('text-indigo-600', 'border-indigo-600');
+            document.getElementById('tab-yil').classList.remove('text-slate-500', 'border-transparent');
+        } else {
+            document.getElementById('ayar-content-yonetim').classList.remove('hidden');
+            document.getElementById('tab-yonetim').classList.add('text-indigo-600', 'border-indigo-600');
+            document.getElementById('tab-yonetim').classList.remove('text-slate-500', 'border-transparent');
+            yoklamaDersleriniGetir();
+            // Zaman seçiciyi ayarla
+            const simdi = new Date();
+            simdi.setMinutes(simdi.getMinutes() - simdi.getTimezoneOffset());
+            document.getElementById('yoklama_manuel_zaman').value = simdi.toISOString().slice(0, 16);
+        }
+    }
+
+    async function yoklamaDersleriniGetir() {
+        const select = document.getElementById('yoklama_oturum_id');
+        try {
+            const oturumlar = await apiIstegi('/api/admin/oturum-listesi');
+            select.innerHTML = '<option value="">Lütfen ders seçin...</option>' + 
+                oturumlar.map(o => `<option value="${o.id}">${o.baslik}</option>`).join('');
+        } catch (e) { console.error('Dersler gelmedi:', e); }
+    }
+
+    async function yoklamaDersSecildi() {
+        const oturumId = document.getElementById('yoklama_oturum_id').value;
+        const haftaSelect = document.getElementById('yoklama_hafta_id');
+        const listeDiv = document.getElementById('yoklama_yonetim_liste');
+        const bosUyari = document.getElementById('yoklama_bos_uyari');
+
+        if (!oturumId) {
+            haftaSelect.disabled = true;
+            listeDiv.classList.add('hidden');
+            bosUyari.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const haftalar = await apiIstegi(`/api/admin/hafta-listesi/${oturumId}`);
+            haftaSelect.innerHTML = '<option value="">Hafta seçin...</option>' + 
+                haftalar.map(h => `<option value="${h.id}">${h.no}. Hafta (${h.baslik})</option>`).join('');
+            haftaSelect.disabled = false;
+        } catch (e) { console.error('Haftalar gelmedi:', e); }
+    }
+
+    async function yoklamaHaftaSecildi() {
+        const oturumId = document.getElementById('yoklama_oturum_id').value;
+        const haftaId = document.getElementById('yoklama_hafta_id').value;
+        const listeDiv = document.getElementById('yoklama_yonetim_liste');
+        const bosUyari = document.getElementById('yoklama_bos_uyari');
+        const tbody = document.getElementById('yoklama_tablo_body');
+
+        if (!haftaId) {
+            listeDiv.classList.add('hidden');
+            bosUyari.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const data = await apiIstegi(`/api/admin/yoklama-kayitlari/${oturumId}/${haftaId}`);
+            listeDiv.classList.remove('hidden');
+            bosUyari.classList.add('hidden');
+            
+            const tumListe = [...data.ogrenciler];
+            data.kayitlar.forEach(k => {
+                const varMi = tumListe.some(o => o.numara === k.numara);
+                if (!varMi) tumListe.push({...k, is_extra: true});
+            });
+
+            tbody.innerHTML = tumListe.map(ogr => {
+                const kayit = data.kayitlar.find(k => k.numara === ogr.numara);
+                const isGeldi = !!kayit;
+                const katilimZamani = kayit ? kayit.olusturma_tarihi : '-';
+                const isExtra = kayit ? (kayit.liste_disi || false) : false;
+                
+                return `
+                    <tr class="hover:bg-slate-50 border-b border-dashed border-slate-100 h-16">
+                        <td class="p-3">
+                            <div class="flex items-center gap-2">
+                                <div class="font-bold text-slate-800 text-[13px] uppercase">${ogr.ad_soyad}</div>
+                                ${isExtra ? '<span class="px-1 py-0.5 bg-amber-50 text-amber-600 text-[8px] font-black rounded border border-amber-100 uppercase">Liste Dışı</span>' : ''}
+                            </div>
+                            <div class="text-[10px] font-medium text-slate-400 mt-0.5">${ogr.numara}</div>
+                        </td>
+                        <td class="p-3 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" ${isGeldi ? 'checked' : ''} 
+                                        onchange="yoklamaManuelDurumDegistir(this, '${ogr.numara}', '${ogr.ad_soyad}')"
+                                        class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                                    <span class="ml-2 text-[10px] font-bold ${isGeldi ? 'text-indigo-600' : 'text-slate-400'} min-w-[50px] text-left">
+                                        ${isGeldi ? 'Katıldı' : 'Katılmadı'}
+                                    </span>
+                                </label>
+                            </div>
+                        </td>
+                        <td class="p-3 text-center text-[11px] font-mono ${isGeldi ? 'text-indigo-600 font-bold' : 'text-slate-300'}">
+                            ${katilimZamani}
+                        </td>
+                        <td class="p-3 text-center text-slate-400">
+                            ${isGeldi ? `<button onclick="adminYoklamaKayitSil('${kayit.id}')" class="p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        } catch (e) { console.error('Veriler gelmedi:', e); }
+    }
+
+    async function yoklamaManuelDurumDegistir(checkbox, numara, ad_soyad) {
+        const oturumId = document.getElementById('yoklama_oturum_id').value;
+        const haftaId = document.getElementById('yoklama_hafta_id').value;
+        const manuelZaman = document.getElementById('yoklama_manuel_zaman').value;
+        const durum = checkbox.checked ? 'geldi' : 'gelmedi';
+
+        if (!oturumId || !haftaId) {
+            toastGoster('Lütfen önce ders ve hafta seçin.', 'warning');
+            checkbox.checked = !checkbox.checked;
+            return;
+        }
+
+        try {
+            const data = await apiIstegi('/api/admin/yoklama-manuel-durum', {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    oturum_id: oturumId, 
+                    hafta_id: haftaId, 
+                    numara: numara, 
+                    ad_soyad: ad_soyad, 
+                    durum: durum,
+                    tarih_saat: manuelZaman 
+                })
+            });
+            if (data.basarili) {
+                toastGoster(data.mesaj, 'success');
+                yoklamaHaftaSecildi(); // Tabloyu tazele
+            } else {
+                throw new Error(data.mesaj);
+            }
+        } catch (e) {
+            checkbox.checked = !checkbox.checked; 
+            console.error('Manuel değişim hatası:', e);
+            toastGoster('Hata: ' + e.message, 'error');
+        }
+    }
+
+    async function adminYoklamaKayitSil(kayitId) {
+        if (!confirm('Bu kaydı silmek istediğinizden emin misiniz?')) return;
+        try {
+            const data = await apiIstegi(`/api/admin/yoklama-kayit-sil/${kayitId}`, { method: 'DELETE' });
+            if (data.basarili) {
+                toastGoster('Kayıt başarıyla silindi.', 'success');
+                yoklamaHaftaSecildi();
+            }
+        } catch (e) {
+            console.error('Silme hatası:', e);
+            toastGoster('Kayıt silinemedi.', 'error');
+        }
+    }
+    async function listeGuncelle() {
+        const oturumId = document.getElementById('yoklama_oturum_id').value;
+        const dosyaInput = document.getElementById('yoklama_yeni_liste');
+        
+        if (!oturumId || !dosyaInput.files[0]) return;
+        
+        const formData = new FormData();
+        formData.append('oturum_id', oturumId);
+        formData.append('dosya', dosyaInput.files[0]);
+        
+        try {
+            const res = await fetch('/api/admin/ogrenci-listesi-guncelle', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.basarili) {
+                toastGoster(data.mesaj, 'success');
+                yoklamaHaftaSecildi(); // Tabloyu tazele
+            } else {
+                toastGoster(data.mesaj, 'error');
+            }
+        } catch (e) {
+            console.error('Liste güncelleme hatası:', e);
+            toastGoster('Liste güncellenirken bir hata oluştu.', 'error');
+        }
+        dosyaInput.value = ''; // Inputu temizle
     }
 
     async function yilListesiGuncelle() {
@@ -476,7 +819,23 @@
         document.getElementById('oturum_edit_id').value = '';
         document.getElementById('oturum_baslik').value = '';
         document.getElementById('oturum_aciklama').value = '';
+        document.getElementById('oturum_dosya').value = ''; // Dosya seçiciyi sıfırla
+        document.getElementById('yuklu_dosya_bilgisi').classList.add('hidden'); // Yüklü dosya uyarısını gizle
+        
+        // Haftaları sıfırla
+        for(let i=1; i<=14; i++) {
+            const hInput = document.getElementById(`hafta_tarih_${i}`);
+            if(hInput) hInput.value = '';
+        }
+        
+        // İlk haftaya bugünü koy
+        const today = new Date().toISOString().split('T')[0];
+        const h1Input = document.getElementById('hafta_tarih_1');
+        if(h1Input) h1Input.value = today;
+
         document.getElementById('oturum_sahibi').value = 'Erdem ALPAR'; // Varsayılan
+        document.getElementById('oturum_konum_kontrol').checked = true;
+        document.getElementById('oturum_sure_kontrol').checked = true;
         currentLat = null;
         currentLng = null;
         if (marker) { map.removeLayer(marker); marker = null; }
@@ -492,38 +851,46 @@
     async function oturumKaydet() {
         const editId = document.getElementById('oturum_edit_id').value;
         const baslik = document.getElementById('oturum_baslik').value;
+        const aciklama = document.getElementById('oturum_aciklama').value;
+        const sure = document.getElementById('oturum_sure').value;
+        const tolerans = document.getElementById('oturum_tolerans').value;
         const yil = document.getElementById('oturum_yil').value;
-        const oturum_sahibi = document.getElementById('oturum_sahibi').value;
+        const sahibi = document.getElementById('oturum_sahibi').value;
+        const konum_kontrol = document.getElementById('oturum_konum_kontrol').checked;
+        const sure_kontrol = document.getElementById('oturum_sure_kontrol').checked;
+
+        // Haftalık tarihleri topla
+        const hafta_tarihleri = {};
+        for(let i=1; i<=14; i++) {
+            const val = document.getElementById(`hafta_tarih_${i}`).value;
+            if(val) hafta_tarihleri[i] = val;
+        }
 
         if (!baslik || !yil) {
-            toastGoster('Lütfen Yıl ve Oturum Başlığı alanlarını doldurun.', 'error');
+            toastGoster('Lütfen Yıl ve Başlık alanlarını doldurun.', 'error');
             return;
         }
 
         const formData = new FormData();
         formData.append('baslik', baslik);
+        formData.append('aciklama', aciklama);
+        // formData.append('tarih', tarih); // Artık 14 hafta içerisinden alınıyor
+        formData.append('sure', sure);
+        formData.append('tolerans', tolerans);
+        if (currentLat) formData.append('lat', currentLat);
+        if (currentLng) formData.append('lng', currentLng);
         formData.append('yil', yil);
-        formData.append('oturum_sahibi', oturum_sahibi);
-        formData.append('aciklama', document.getElementById('oturum_aciklama').value);
-        formData.append('sure', document.getElementById('oturum_sure').value);
-        formData.append('tolerans', document.getElementById('oturum_tolerans').value);
+        formData.append('oturum_sahibi', sahibi);
+        formData.append('konum_dogrulama', konum_kontrol);
+        formData.append('sure_kisiti', sure_kontrol);
+        formData.append('hafta_tarihleri', JSON.stringify(hafta_tarihleri));
 
-        if (currentLat && currentLng) {
-            formData.append('lat', currentLat);
-            formData.append('lng', currentLng);
-        }
-
-        const dosyaInput = document.getElementById('oturum_dosya');
-        if (dosyaInput.files.length > 0) {
-            formData.append('dosya', dosyaInput.files[0]);
-        }
-
-        let url = '/api/yoklama/oturum-baslat';
-        if (editId) {
-            url = `/api/yoklama/oturum-duzenle/${editId}`; // Backend düzenleme route'u
+        if (document.getElementById('oturum_dosya').files[0]) {
+            formData.append('dosya', document.getElementById('oturum_dosya').files[0]);
         }
 
         try {
+            const url = editId ? `/api/yoklama/oturum-duzenle/${editId}` : '/api/yoklama/oturum-baslat';
             const res = await fetch(url, {
                 method: 'POST',
                 body: formData
@@ -532,130 +899,349 @@
             const data = await res.json();
 
             if (data.basarili) {
-                toastGoster(editId ? 'Oturum güncellendi' : 'Oturum oluşturuldu');
-                location.reload();
+                toastGoster(editId ? 'Oturum güncellendi.' : 'Oturum başlatıldı.', 'success');
+                setTimeout(() => location.reload(), 800);
             } else {
-                toastGoster('Hata: ' + data.mesaj, 'error');
+                toastGoster(data.mesaj || 'İşlem başarısız.', 'error');
             }
         } catch (err) {
-            logger.hata('İşlem hatası', err);
+            console.error('İşlem hatası:', err);
+            toastGoster('Bağlantı hatası oluştu.', 'error');
         }
     }
 
-    // Eksik olan qrKodGoster fonksiyonu
+    // Ana sayfadaki genel QR Kod butonu için (Geri sayım ve yenileme özellikli)
     async function qrKodGoster(oturumId, baslik) {
+        // Varsa eski döngüleri temizle
+        clearInterval(qrInterval);
+        clearInterval(progressInterval);
+
+        // Modalı Aç ve UI Hazırla
+        document.getElementById('qr_baslik').innerText = baslik;
+        document.getElementById('qr_gorsel').src = ''; // Önce boşalt
+        document.getElementById('qrModal').classList.remove('hidden');
+
+        // İlk QR'ı getir
+        await qrGetirVeGoster(oturumId, null); // HaftaId null ise genel oturum token'ı alınır
+
+        // 10 saniyede bir QR yenileme döngüsünü başlat
+        qrInterval = setInterval(() => {
+            qrGetirVeGoster(oturumId, null);
+        }, 10000);
+    }
+
+
+    // QR Kod görselini getirip arayüze basan ana fonksiyon
+    async function qrGetirVeGoster(id, haftaId = null) {
         try {
-            const res = await apiIstegi(`/api/yoklama/token-al/${oturumId}`);
-            const token = res.token;
+            // Eğer haftaId belirtilmişse (Haftalık yoklama), o haftayı aktif et ve token al
+            let url, metod, body;
+            
+            if (haftaId && haftaId !== 'null' && haftaId !== 'undefined') {
+                url = '/api/yoklama/hafta-baslat';
+                metod = 'POST';
+                body = { oturumId: id, haftaId: haftaId };
+            } else {
+                url = `/api/yoklama/token-al/${id}`;
+                metod = 'GET';
+                body = null;
+            }
 
-            const qrRes = await fetch(`/api/yoklama/qr-kod/${token}`);
-            const qrBase64 = await qrRes.text();
+            const res = await fetch(url, {
+                method: metod,
+                headers: { 'Content-Type': 'application/json' },
+                body: body ? JSON.stringify(body) : null
+            });
+            const data = await res.json();
 
-            document.getElementById('qr_baslik').innerText = baslik;
-            document.getElementById('qr_gorsel').src = `data:image/png;base64,${qrBase64}`;
-            document.getElementById('qrModal').classList.remove('hidden');
-
-            logger.basarili('QR Kod üretildi');
-        } catch (err) {
-            logger.hata('QR kod hatası', err);
-            toastGoster('QR kod üretilemedi.', 'error');
+            if (res.ok && data.token) {
+                const qrGorselElement = document.getElementById('qr_gorsel');
+                if (qrGorselElement) {
+                    // Cache busting ile resmi saniyeler içinde yenile
+                    qrGorselElement.src = `/api/yoklama/qr-kod/${data.token}?t=${new Date().getTime()}`;
+                    
+                    // Görselin yüklenmesini bekle (Görsel kırık mı kontrol et)
+                    qrGorselElement.onerror = () => {
+                        console.error('QR görseli sunucudan çekilemedi.');
+                        toastGoster('QR kod görseli oluşturulamadı.', 'error');
+                    };
+                }
+                
+                // İlerleme çubuğu ve sayacı tetikle (10 saniye)
+                animasyonBaslat();
+            } else {
+                const mesaj = data.mesaj || 'QR anahtarı alınamadı.';
+                console.error('QR Token Hatası:', mesaj);
+                toastGoster(mesaj, 'error');
+                
+                // Hata mesajı varsa ekranda görelim (DEBUG)
+                const qrGorselElement = document.getElementById('qr_gorsel');
+                if (qrGorselElement) qrGorselElement.alt = mesaj;
+            }
+        } catch (e) {
+            console.error('QR Yenileme Hatası:', e);
+            toastGoster('Bağlantı hatası: Sunucuya ulaşılamıyor.', 'error');
         }
     }
 
-    function oturumDuzenleModalAc(id, baslik, aciklama, sure, tolerans, sahip) {
-        yilListesiGuncelle();
 
-        // Oturumun mevcut konumunu çekmek gerekebilirdi ama burada basitlik için pas geçiyoruz veya data-attribute ile taşıyabiliriz.
-        // Şimdilik null varsayıyoruz veya globalde saklanan yok.
-        // Doğrusu: Backend'den veya HTML'den lat/lng alıp buraya paslamak. 
-        // HTML'deki onclick parametrelerini güncellememek için (çok uzadı), burada tekrar fetch yapmıyoruz.
-        // Kullanıcı yeniden seçsin veya varsayılan konuma gitsin.
+    function animasyonBaslat() {
+        const progressBar = document.getElementById('qr_progress');
+        const sayac = document.getElementById('qr_sayac');
+        if (!progressBar || !sayac) return;
 
-        // Formu doldur
-        document.getElementById('oturum_edit_id').value = id;
-        document.getElementById('oturum_baslik').value = baslik;
-        document.getElementById('oturum_aciklama').value = aciklama === 'None' ? '' : aciklama;
-        document.getElementById('oturum_sahibi').value = sahip !== 'None' && sahip ? sahip : 'Erdem ALPAR';
-        document.getElementById('oturum_sure').value = sure;
-        document.getElementById('oturum_tolerans').value = tolerans;
+        clearInterval(progressInterval);
+        clearInterval(countdownInterval);
 
-        // UI Güncelle
-        document.getElementById('oturum_modal_baslik').innerText = 'Oturumu Düzenle';
-        document.getElementById('oturum_kaydet_btn').innerText = 'Değişiklikleri Kaydet';
+        let timeLeft = 10;
+        progressBar.style.width = '100%';
+        sayac.innerText = '10';
 
-        document.getElementById('oturumModal').classList.remove('hidden');
+        progressInterval = setInterval(() => {
+            timeLeft -= 0.1;
+            if (timeLeft <= 0) timeLeft = 0;
+            progressBar.style.width = `${(timeLeft / 10) * 100}%`;
+            sayac.innerText = Math.ceil(timeLeft);
+            if (timeLeft <= 0) clearInterval(progressInterval);
+        }, 100);
     }
 
-    // Ders Detaylarını ve Haftalık Tabloyu Göster
-    async function katilimcilariGoster(oturumId, baslik) {
-        document.getElementById('katilimci_baslik').innerText = baslik;
-        document.getElementById('katilimciModal').classList.remove('hidden');
-
-        const thead = document.getElementById('tablo_basliklar');
-        const tbody = document.getElementById('katilimci_liste_body');
-
-        thead.innerHTML = '<th class="p-3 border-b">Öğrenci</th>'; // İlk sütun
-        tbody.innerHTML = '<tr><td class="p-4 text-center text-slate-400">Veriler yükleniyor...</td></tr>';
-
+    // Düzenleme Modalı Açma (API Destekli - Tırnak Hatasına Karşı Korumalı)
+    async function oturumDuzenleModalAc(id) {
         try {
-            const res = await apiIstegi(`/api/yoklama/ders-detay/${oturumId}`);
-            if (!res || !res.ogrenciler) {
-                tbody.innerHTML = '<tr><td class="p-4 text-center text-red-400">Veri bulunamadı.</td></tr>';
-                return;
+            // Önce verileri sunucudan çekelim (Böylece tırnak vb hatalar oluşmaz)
+            const res = await fetch(`/api/yoklama/oturum-detay/${id}`);
+            const veri = await res.json();
+
+            if (!res.ok) throw new Error(veri.mesaj);
+
+            document.getElementById('oturum_modal_baslik').innerText = 'Oturumu Düzenle';
+            document.getElementById('oturum_kaydet_btn').innerText = 'Değişiklikleri Kaydet';
+            document.getElementById('oturum_edit_id').value = id;
+            
+            // Yıl listesini sunucudan çekip dolduralım ve uygun olanı seçelim
+            await yilListesiGuncelle();
+            document.getElementById('oturum_yil').value = veri.yil || '';
+            
+            // Dosya Bilgisi Göster
+            const dosyaBilgiDiv = document.getElementById('yuklu_dosya_bilgisi');
+            const dosyaMetin = document.getElementById('yuklu_dosya_metni');
+            if (veri.dosya_yolu) {
+                const dosyaAdi = veri.dosya_yolu.split('/').pop();
+                dosyaMetin.innerText = `Yüklü Liste: ${dosyaAdi}`;
+                dosyaBilgiDiv.classList.remove('hidden');
+            } else {
+                dosyaBilgiDiv.classList.add('hidden');
             }
 
-            // Başlıkları Oluştur (Haftalar)
-            let headerHTML = '<th class="p-3 border-b min-w-[200px] sticky left-0 bg-slate-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Öğrenci Bilgileri</th>';
-            res.haftalar.forEach(hafta => {
-                headerHTML += `
-                    <th class="p-3 border-b text-center min-w-[60px] group relative">
-                        <div class="flex flex-col items-center gap-1">
-                            <span>${hafta.hafta_no}</span>
-                            <button onclick="qrBaslat('${oturumId}', '${hafta.id}', '${hafta.hafta_no}')" 
-                                class="p-1 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all" 
-                                title="Bu hafta için yoklamayı başlat">
-                                <i data-lucide="qr-code" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </th>
-                `;
-            });
-            thead.innerHTML = headerHTML;
+            document.getElementById('oturum_baslik').value = veri.baslik;
+            document.getElementById('oturum_aciklama').value = veri.aciklama || '';
+            document.getElementById('oturum_sure').value = veri.gecerlilik_suresi;
+            document.getElementById('oturum_tolerans').value = veri.tolerans_metre;
+            document.getElementById('oturum_sahibi').value = veri.oturum_sahibi || 'Erdem ALPAR';
+            
+            // Haftalık Tarihleri Doldur
+            for(let i=1; i<=14; i++) {
+                const hInput = document.getElementById(`hafta_tarih_${i}`);
+                if(hInput) hInput.value = '';
+            }
+            if (veri.haftalar) {
+                veri.haftalar.forEach(h => {
+                    const hInput = document.getElementById(`hafta_tarih_${h.no}`);
+                    if(hInput && h.tarih) hInput.value = h.tarih;
+                });
+            }
 
-            // Satırları Oluştur (Öğrenciler)
+            // Checkbox'lar
+            document.getElementById('oturum_konum_kontrol').checked = veri.konum_dogrulama !== false;
+            document.getElementById('oturum_sure_kontrol').checked = veri.sure_kisiti !== false;
+
+            // Haritayı ve Marker'ı Hazırla
+            document.getElementById('oturumModal').classList.remove('hidden');
+            
+            setTimeout(() => {
+                if (veri.hedef_lat && veri.hedef_lng) {
+                    currentLat = veri.hedef_lat;
+                    currentLng = veri.hedef_lng;
+                    haritayiBaslat(currentLat, currentLng);
+                } else {
+                    haritayiBaslat();
+                }
+                
+                if (map) map.invalidateSize();
+                lucide.createIcons();
+            }, 300);
+        } catch (err) {
+            console.error('Veri yükleme hatası:', err);
+            toastGoster('Ders bilgileri yüklenemedi.', 'error');
+        }
+    }
+
+    function yoklamaExcelIndir(oturumId) {
+        if (!oturumId) {
+            toastGoster('Geçersiz oturum!', 'error');
+            return;
+        }
+        toastGoster('Excel raporu hazırlanıyor...', 'info');
+        // Excel indirme linkine git
+        window.location.href = `/api/admin/yoklama-excel/${oturumId}`;
+    }
+
+    async function katilimcilariGoster(oturumId, baslik) {
+        currentOturumId = oturumId; // Global ID'yi güncelle
+        try {
+            document.getElementById('katilimci_baslik').innerText = baslik;
+            document.getElementById('katilimciModal').classList.remove('hidden');
+
+            const thead = document.getElementById('tablo_basliklar');
+            const tbody = document.getElementById('katilimci_liste_body');
+
+            thead.innerHTML = '<tr><td class="p-4 text-center">Yükleniyor...</td></tr>';
             tbody.innerHTML = '';
-            res.ogrenciler.forEach(ogr => {
+
+            const res = await fetch(`/api/yoklama/ders-detay/${oturumId}`);
+            const data = await res.json();
+            console.log("Yoklama Verileri:", data);
+
+            // Teknik Analiz: Verilerin gelip gelmediğini konsol üzerinden mühürle
+            console.log("🔍 YOKLAMA TEKNİK ANALİZİ:", {
+                oturum_id: oturumId,
+                toplam_ogrenci: data.ogrenciler?.length,
+                toplam_yoklama_kaydi: data.yoklamalar?.length,
+                yoklama_detaylari: data.yoklamalar
+            });
+
+            if (!res.ok) throw new Error(data.mesaj || 'Veri alınamadı');
+
+            // 1. Başlıkları (Haftaları) Oluştur
+            let headerHTML = `
+                <th class="px-4 py-3 text-left border-b bg-slate-100 sticky left-0 z-20 min-w-[180px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                    <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Öğrenci Listesi</div>
+                </th>`;
+            
+            data.haftalar.forEach(h => {
+                const isCurrent = h.is_current;
+                // Tarihi input formatına uygun hale getir (YYYY-MM-DD)
+                let dateVal = "";
+                if (h.tarih) {
+                    const parts = h.tarih.split('.');
+                    if (parts.length === 3) dateVal = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+
+                headerHTML += `
+                    <th class="px-2 py-3 text-center border-b ${isCurrent ? 'bg-indigo-50 border-x border-indigo-100' : 'bg-slate-100'} min-w-[100px]">
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="flex items-center gap-1">
+                                <span class="text-[9px] font-black ${isCurrent ? 'text-indigo-600' : 'text-slate-400'} uppercase">${h.hafta_no}.H</span>
+                                <button onclick="qrBaslat('${oturumId}', '${h.id}', '${h.hafta_no}')" 
+                                    class="p-1 ${isCurrent ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-indigo-600 border border-indigo-100'} rounded hover:scale-110 transition-all"
+                                    title="Bu Haftanın Yoklamasını Başlat">
+                                    <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                            <input type="date" value="${dateVal}" 
+                                onchange="haftaTarihDegistir('${h.id}', this.value, '${oturumId}', '${baslik}')"
+                                class="text-[8px] bg-transparent border-none focus:ring-0 text-slate-500 font-mono text-center w-full cursor-pointer hover:bg-white/50 rounded transition-all">
+                            ${h.tarih ? `<span class="text-[8px] font-bold text-indigo-500 mt-0.5">${h.tarih}</span>` : '<span class="text-[8px] italic text-slate-400">Tarih Seç</span>'}
+                        </div>
+                    </th>`;
+            });
+            thead.innerHTML = `<tr>${headerHTML}</tr>`;
+
+            // 2. Akıllı Liste: Excel'de olmayan ama yoklamaya katılanları tespit et
+            const tumOgrenciler = [...data.ogrenciler];
+            data.yoklamalar.forEach(y => {
+                const varMi = tumOgrenciler.some(o => 
+                    String(o.numara).trim() === String(y.numara).trim() || 
+                    String(o.ad_soyad).trim().toLowerCase() === String(y.ad_soyad).trim().toLowerCase()
+                );
+                
+                if (!varMi) {
+                    tumOgrenciler.push({
+                        id: 'extra-' + Math.random(),
+                        ad_soyad: y.ad_soyad,
+                        numara: y.numara,
+                        is_extra: true
+                    });
+                }
+            });
+
+            // 3. Satırları (Öğrencileri) Oluştur
+            let bodyHTML = '';
+            tumOgrenciler.forEach((ogr, index) => {
                 let row = `
                     <tr class="hover:bg-slate-50 group">
-                        <td class="p-3 border-b sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                            <div class="font-medium text-slate-800">${ogr.ad_soyad}</div>
-                            <div class="text-xs text-slate-400">${ogr.numara}</div>
-                        </td>
-                `;
+                        <td class="px-4 py-4 border-b sticky left-0 bg-white group-hover:bg-slate-50 z-20 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.1)] border-r border-slate-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-[10px] font-black text-slate-500 shrink-0">
+                                    ${index + 1}
+                                </div>
+                                <div class="overflow-hidden">
+                                    <div class="font-bold text-slate-800 text-sm truncate uppercase tracking-tight">${ogr.ad_soyad}</div>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <i data-lucide="hash" class="w-3.5 h-3.5 text-slate-300"></i>
+                                        <span class="text-[10px] font-mono font-bold text-indigo-500">${ogr.numara || '<span class="text-slate-300 italic font-normal">Numara Yok</span>'}</span>
+                                        ${ogr.is_extra ? '<span class="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[8px] font-black rounded border border-amber-100 uppercase ml-1">Liste Dışı</span>' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>`;
 
-                // Her hafta için kutucuk
-                res.haftalar.forEach(hafta => {
-                    // Bu öğrencinin bu haftada kaydı var mı?
-                    const varMi = res.yoklamalar.some(y => y.hafta_id === hafta.id && (y.numara === ogr.numara || y.ad_soyad === ogr.ad_soyad));
+                data.haftalar.forEach(h => {
+                    // Akıllı Eşleşme: Liste dışı olanları da bul
+                    const kayit = data.yoklamalar.find(y => {
+                        const haftaEslesme = Number(y.hafta_id) === Number(h.id);
+                        const numaraEslesme = String(y.numara || "").trim() === String(ogr.numara || "").trim();
+                        const isimEslesme = String(y.ad_soyad || "").trim().toLowerCase() === String(ogr.ad_soyad || "").trim().toLowerCase();
+                        return haftaEslesme && (numaraEslesme || isimEslesme);
+                    });
+
+                    const varMi = !!kayit;
+                    const isExtra = kayit ? kayit.liste_disi : false;
 
                     row += `
-                        <td class="p-3 border-b text-center">
-                            ${varMi
-                            ? '<div class="w-6 h-6 bg-green-500 rounded text-white flex items-center justify-center mx-auto"><i data-lucide="check" class="w-4 h-4"></i></div>'
-                            : '<div class="w-6 h-6 bg-slate-100 rounded mx-auto border border-slate-200"></div>'}
-                        </td>
-                    `;
+                        <td class="px-2 py-3 border-b text-center ${h.is_current ? 'bg-indigo-50/30' : ''}">
+                            ${varMi 
+                                ? `<div class="w-7 h-7 ${isExtra ? 'bg-amber-500' : 'bg-emerald-500'} text-white rounded-lg shadow-sm flex flex-col items-center justify-center mx-auto animate-fade-in relative group/check">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                    ${isExtra ? '<div class="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full border border-amber-500"></div>' : ''}
+                                   </div>` 
+                                : '<div class="w-6 h-6 border-2 border-dashed border-slate-200 rounded mx-auto opacity-40"></div>'}
+                        </td>`;
                 });
-
                 row += '</tr>';
-                tbody.innerHTML += row;
+                bodyHTML += row;
             });
 
+            tbody.innerHTML = bodyHTML || '<tr><td colspan="100%" class="p-8 text-center text-slate-400">Henüz öğrenci listesi yüklenmemiş.</td></tr>';
+            
+            // Lucide ikonlarını canlandır
             lucide.createIcons();
 
         } catch (e) {
-            console.error(e);
-            tbody.innerHTML = '<tr><td class="p-4 text-center text-red-500">Hata oluştu.</td></tr>';
+            console.error('Tablo hatası:', e);
+            toastGoster('Katılımcı listesi yüklenemedi.', 'error');
+        }
+    }
+
+    async function haftaTarihDegistir(haftaId, tarih, oturumId, baslik) {
+        if (!tarih) return;
+        try {
+            const res = await fetch('/api/yoklama/hafta-tarih-guncelle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ haftaId, tarih })
+            });
+            const data = await res.json();
+            if (data.basarili) {
+                toastGoster('Tarih güncellendi.');
+                // Tabloyu sessizce yenile
+                katilimcilariGoster(oturumId, baslik);
+            } else {
+                toastGoster(data.mesaj, 'error');
+            }
+        } catch (err) {
+            console.error(err);
         }
     }
 
@@ -677,52 +1263,6 @@
         qrInterval = setInterval(() => {
             qrGetirVeGoster(oturumId, haftaId);
         }, 10000);
-    }
-
-    async function qrGetirVeGoster(oturumId, haftaId) {
-        // Progress Bar Animasyonu Başlat
-        let timeLeft = 10;
-        const progressBar = document.getElementById('qr_progress');
-        const sayac = document.getElementById('qr_sayac');
-
-        // Reset
-        progressBar.style.width = '100%';
-        sayac.innerText = '10';
-
-        // Progress intervalini temizle ve yeniden başlat
-        clearInterval(progressInterval);
-        progressInterval = setInterval(() => {
-            timeLeft -= 0.1;
-            if (timeLeft <= 0) timeLeft = 0;
-
-            const percent = (timeLeft / 10) * 100;
-            progressBar.style.width = `${percent}%`;
-            sayac.innerText = Math.ceil(timeLeft);
-
-            if (timeLeft <= 0) clearInterval(progressInterval);
-        }, 100);
-
-        try {
-            // Haftayı aktif yap ve token al
-            const res = await fetch('/api/yoklama/hafta-baslat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ oturumId, haftaId })
-            });
-            const data = await res.json();
-
-            if (data.basarili) {
-                // QR Göster
-                const qrRes = await fetch(`/api/yoklama/qr-kod/${data.token}`);
-                const qrBase64 = await qrRes.text();
-                document.getElementById('qr_gorsel').src = `data:image/png;base64,${qrBase64}`;
-            } else {
-                toastGoster(data.mesaj, 'error');
-            }
-        } catch (e) {
-            console.error(e);
-            // toastGoster('QR güncellenemedi', 'error'); // Çok sık hata vermesin
-        }
     }
 
     // Yıl Silme Fonksiyonu
@@ -806,16 +1346,16 @@
                 const res = await fetch(`/api/yoklama/oturum-sil/${id}`, {
                     method: 'DELETE'
                 });
-                const data = await res.json();
-
-                if (data.basarili) {
-                    toastGoster('Oturum silindi', 'success');
-                    setTimeout(() => location.reload(), 500);
+                if (res.ok) {
+                    toastGoster('Oturum silindi.', 'success');
+                    setTimeout(() => location.reload(), 1000);
                 } else {
-                    toastGoster(data.mesaj, 'error');
+                    const err = await res.json();
+                    toastGoster(err.mesaj || 'İşlem başarısız.', 'error');
                 }
-            } catch (error) {
-                toastGoster('Silme işlemi başarısız', 'error');
+            } catch (err) {
+                console.error(err);
+                toastGoster('Bağlantı hatası oluştu.', 'error');
             }
         }
     }

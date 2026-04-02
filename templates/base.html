@@ -47,6 +47,23 @@
             background: #94a3b8;
         }
 
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e1;
+        }
+
         /* Animasyonlar */
         @keyframes fadeIn {
             from {
@@ -121,7 +138,7 @@
                 <span class="font-medium">Sınav Hazırla</span>
             </a>
 
-            <a href="/not-girisi"
+            <a href="/not_girisi"
                 class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-all">
                 <i data-lucide="edit" class="w-5 h-5"></i>
                 <span class="font-medium">Not Girişi</span>
@@ -196,43 +213,43 @@
     </main>
 
     <!-- Toast Bildirimleri -->
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    <div id="toast-container" class="fixed top-4 right-4 space-y-2" style="z-index: 9999 !important;"></div>
 
     <script>
         // ============================================
         // RENKLI CONSOLE LOGGING SİSTEMİ (TEMİZLENDİ)
         // ============================================
 
-        // Tailwind ve bazı eklenti uyarılarını gizle
+        // Tailwind ve bazı eklenti/CORS uyarılarını tamamen gizle
         (function () {
             const originalWarn = console.warn;
             const originalError = console.error;
             const originalLog = console.log;
 
             console.warn = function (...args) {
-                if (typeof args[0] === 'string' && (args[0].includes('tailwindcss.com') || args[0].includes('cdn.tailwindcss.com'))) return;
+                if (typeof args[0] === 'string' && (args[0].includes('cdn.tailwindcss.com') || args[0].includes('production'))) return;
                 originalWarn.apply(console, args);
             };
 
             console.error = function (...args) {
-                if (typeof args[0] === 'string' && (args[0].includes('chrome-extension') || args[0].includes('NET::ERR_FAILED'))) return;
+                // Eklenti, CORS veya önemsiz network hatalarını sustur
+                const msg = args[0] ? String(args[0]) : "";
+                if (msg.includes('chrome-extension') || msg.includes('NET::ERR_FAILED') || msg.includes('Denying load')) return;
                 originalError.apply(console, args);
             };
 
-            // Debug modu kapalıyken logları sustur (İsteğe bağlı açılabilir: window.logger.debug = true)
-            console.log = function (...args) {
-                if (window.logger && !window.logger.isEnabled && typeof args[0] === 'string' && args[0].includes('%c')) return;
-                originalLog.apply(console, args);
-            };
+            // Uygulama loglarını (Emoji içerenler hariç) debug modu kapalıyken gizlemek isterseniz burayı kullanabilirsiniz
+            window.logger = { isEnabled: true }; 
         })();
 
         const ConsoleLogger = {
-            isEnabled: true, // Hata ayıklama için açıldı
+            isEnabled: true,
             styles: {
-                basarili: 'background: #10b981; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
-                hata: 'background: #ef4444; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
+                basarili: 'color: #10b981; font-weight: bold;',
+                hata: 'color: #ef4444; font-weight: bold;',
+                bilgi: 'color: #3b82f6; font-weight: bold; font-style: italic;',
+                detay: 'color: #94a3b8; font-family: monospace; font-size: 10px;',
                 uyari: 'background: #f59e0b; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
-                bilgi: 'background: #3b82f6; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
                 baslik: 'background: #667eea; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;',
                 veri: 'color: #64748b; font-style: italic;'
             },
@@ -244,7 +261,6 @@
             },
 
             hata: function (mesaj, hataDetay = null) {
-                // Hataları her zaman göster ama eklenti hatalarını filtre uygula
                 console.error('%c ✗ HATA ', this.styles.hata, mesaj);
                 if (hataDetay) console.error('%c   └─ Detay:', this.styles.veri, hataDetay);
             },
@@ -332,6 +348,7 @@
             };
 
             toast.className = `${renkler[tip]} text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 animate-slide-in`;
+            toast.style.zIndex = "9999";
             toast.innerHTML = `
                 <i data-lucide="${ikonlar[tip]}" class="w-5 h-5"></i>
                 <span class="font-medium">${mesaj}</span>
