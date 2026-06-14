@@ -814,19 +814,70 @@
   }
 
   function excelIsle(data) {
-    const baslik = data[0].map(h => String(h).toLowerCase());
-    const adIdx = baslik.findIndex(h => h.includes('adı_'));
-    const soyadIdx = baslik.findIndex(h => h.includes('soyadı_'));
-    const ogrenciNoIdx = baslik.findIndex(h => h.includes('öğrenci no') || h.includes('ogrenci no'));
+    if (!data || data.length < 2) {
+      toastGoster('Excel dosyası boş veya okunamadı', 'error');
+      return;
+    }
 
-    // Aktif kolona göre index belirle
+    // Başlık satırını normalize et (küçük harf, boşluk trim)
+    const baslik = data[0].map(h => String(h == null ? '' : h).trim().toLowerCase());
+
+    // Ad kolonunu bul — çok sayıda yaygın format destekleniyor
+    const adAramalari = ['adı_', 'adı', 'ad soyad', 'adsoyad', 'ad_soyad', 'isim', 'öğrenci adı', 'ogrenci adi', 'name', 'ad'];
+    const soyadAramalari = ['soyadı_', 'soyadı', 'soyad', 'surname', 'soyadı'];
+    const noAramalari = ['öğrenci no', 'ogrenci no', 'öğrenci numarası', 'numara', 'no', 'student id', 'okul no'];
+
+    // Ad Soyad tek kolonsa bul (örn: "Ad Soyad", "Ad_Soyad", "İsim")
+    const adSoyadTekIdx = baslik.findIndex(h =>
+      h === 'ad soyad' || h === 'adsoyad' || h === 'ad_soyad' ||
+      h === 'isim' || h === 'name' || h === 'öğrenci adı' || h === 'adı soyadı'
+    );
+
+    // Ayrı kolon araması
+    let adIdx = -1;
+    let soyadIdx = -1;
+    for (const ara of adAramalari) {
+      adIdx = baslik.findIndex(h => h.includes(ara));
+      if (adIdx !== -1) break;
+    }
+    for (const ara of soyadAramalari) {
+      soyadIdx = baslik.findIndex(h => h.includes(ara) && h !== baslik[adIdx]);
+      if (soyadIdx !== -1) break;
+    }
+
+    let ogrenciNoIdx = -1;
+    for (const ara of noAramalari) {
+      ogrenciNoIdx = baslik.findIndex(h => h.includes(ara));
+      if (ogrenciNoIdx !== -1) break;
+    }
+
+    // Not kolonu
     let notIdx = -1;
     if (aktifKolon === 'vize') {
-      notIdx = baslik.findIndex(h => h.includes('vize'));
+      notIdx = baslik.findIndex(h => h.includes('vize') || h.includes('midterm') || h.includes('ara sınav'));
     } else if (aktifKolon === 'final') {
-      notIdx = baslik.findIndex(h => h.includes('final'));
+      notIdx = baslik.findIndex(h => h.includes('final') || h.includes('yıl sonu'));
     } else if (aktifKolon === 'but') {
-      notIdx = baslik.findIndex(h => h.includes('büt') || h.includes('but'));
+      notIdx = baslik.findIndex(h => h.includes('büt') || h.includes('but') || h.includes('bütünleme') || h.includes('telafi'));
+    }
+
+    // Debug — konsola yazdır
+    console.log('📊 Excel kolon tespiti:', {
+      baslik,
+      adSoyadTekIdx,
+      adIdx,
+      soyadIdx,
+      ogrenciNoIdx,
+      notIdx
+    });
+
+    // Hiçbir ad kolonu bulunamazsa uyar
+    if (adSoyadTekIdx === -1 && adIdx === -1) {
+      toastGoster(
+        `Ad/Soyad kolonu bulunamadı! Kolonlarınız: [${data[0].join(' | ')}]`,
+        'error'
+      );
+      return;
     }
 
     let eklenen = 0;
@@ -834,22 +885,33 @@
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const ad = `${row[adIdx] || ''} ${row[soyadIdx] || ''}`.trim();
-      if (!ad) continue;
+      if (!row || row.every(h => h == null || String(h).trim() === '')) continue;
 
-      const notDegeri = notIdx !== -1 ? (row[notIdx] || '') : '';
-      const ogrenciNo = ogrenciNoIdx !== -1 ? (row[ogrenciNoIdx] || '') : '';
+      // Ad Soyad oluştur
+      let ad = '';
+      if (adSoyadTekIdx !== -1) {
+        ad = String(row[adSoyadTekIdx] || '').trim();
+      } else {
+        const adPart = String(row[adIdx] || '').trim();
+        const soyadPart = soyadIdx !== -1 ? String(row[soyadIdx] || '').trim() : '';
+        ad = `${adPart} ${soyadPart}`.trim();
+      }
 
-      // Mevcut öğrenci kontrolü
-      const mevcutIdx = aktifSinif.ogrenciler.findIndex(o => o.ad.toLowerCase() === ad.toLowerCase());
+      if (!ad || ad === '' || ad.toLowerCase() === 'undefined') continue;
+
+      const notDegeri = notIdx !== -1 ? String(row[notIdx] ?? '').trim() : '';
+      const ogrenciNo = ogrenciNoIdx !== -1 ? String(row[ogrenciNoIdx] ?? '').trim() : '';
+
+      // Mevcut öğrenci kontrolü (ad ile)
+      const mevcutIdx = aktifSinif.ogrenciler.findIndex(
+        o => o.ad.trim().toLowerCase() === ad.toLowerCase()
+      );
 
       if (mevcutIdx !== -1) {
-        // Güncelle
         aktifSinif.ogrenciler[mevcutIdx][aktifKolon] = notDegeri;
         if (ogrenciNo) aktifSinif.ogrenciler[mevcutIdx].ogrenci_no = ogrenciNo;
         guncellenen++;
       } else {
-        // Yeni ekle
         aktifSinif.ogrenciler.push({
           idx: aktifSinif.ogrenciler.length,
           ad,
