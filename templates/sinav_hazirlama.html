@@ -531,14 +531,6 @@
     }
 
     async function sinavKaydet() {
-        // UI ile Set senkronizasyonu (Garantilemek için)
-        document.querySelectorAll('.soru-checkbox:checked').forEach(checkbox => {
-            const soruId = parseInt(checkbox.dataset.soruId);
-            if (!isNaN(soruId)) {
-                secilenSorular.add(soruId);
-            }
-        });
-
         if (secilenSorular.size === 0) {
             toastGoster('Lütfen en az bir soru seçin', 'warning');
             return;
@@ -554,6 +546,7 @@
         */
 
         const sinavData = {
+            sinav_id: {% if eski_sinav %}{{ eski_sinav.id }}{% else %}null{% endif %},
             baslik: baslik,
             aciklama: document.getElementById('sinavAciklama').value,
             egitim_yili: document.getElementById('sinavEgitimYili').value,
@@ -736,7 +729,7 @@
         secilenSorulariGuncelle();
 
         // Label Güncelleme
-        checkbox.nextElementSibling.textContent = checked ? 'Tümünü Kaldır' : 'Tümünü Seç';
+        checkbox.parentElement.querySelector('span').textContent = checked ? 'Tümünü Kaldır' : 'Tümünü Seç';
 
         // Checkbox görsel durumunu güncelle
         const wrapper = checkbox.parentElement;
@@ -899,8 +892,17 @@
         const seciliSoruIdleri = [
             {% for sinav_sorusu in eski_sinav.sorular %}
                 {{ sinav_sorusu.soru_id }},
-        {% endfor %}
+            {% endfor %}
         ];
+
+        // Tarayıcı cache'inde kalan tüm checkbox'ları önce temizle
+        document.querySelectorAll('.soru-checkbox').forEach(cb => {
+            cb.checked = false;
+            const kart = cb.closest('.soru-kart');
+            if (kart) kart.classList.remove('soru-secili');
+        });
+        secilenSorular.clear();
+
 
     seciliSoruIdleri.forEach(soruId => {
         const soruKart = document.querySelector(`.soru-kart[data-soru-id="${soruId}"]`);
@@ -915,6 +917,17 @@
 
     // Listeyi güncelle
     secilenSorulariGuncelle();
+    });
+    {% else %}
+    document.addEventListener('DOMContentLoaded', () => {
+        // Eski sınav yüklenmiyorsa tarayıcı cache'inden kalan tüm check'leri temizle
+        document.querySelectorAll('.soru-checkbox').forEach(cb => {
+            cb.checked = false;
+            const kart = cb.closest('.soru-kart');
+            if (kart) kart.classList.remove('soru-secili');
+        });
+        secilenSorular.clear();
+        secilenSorulariGuncelle();
     });
     {% endif %}
 

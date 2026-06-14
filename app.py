@@ -410,36 +410,75 @@ def sinav_kaydet():
     """Sınav kağıdını kaydet"""
     try:
         data = request.json
-        yeni_sinav = SinavKagidi(
-            baslik=data.get('baslik', ''),
-            egitim_yili=data.get('egitim_yili'),
-            donem=data.get('donem'),
-            aciklama=data.get('aciklama'),
-            tarih=data.get('tarih'),
-            saat=data.get('saat'), # Yeni eklenen
-            okul_adi=data.get('okul_adi'),
-            okul_adi_boyutu=data.get('okul_adi_boyutu', 24),
-            egitim_yili_boyutu=data.get('egitim_yili_boyutu', 18),
-            donem_boyutu=data.get('donem_boyutu', 16),
-            baslik_boyutu=data.get('baslik_boyutu', 16),
-            imza_metni=data.get('imza_metni'), # Yeni İmza Metni
-            yazi_fontu=data.get('yazi_fontu'),
-            yazi_boyutu=data.get('yazi_boyutu', 12),
-            yazi_rengi=data.get('yazi_rengi', '#000000'),
-            yazi_stili=data.get('yazi_stili', 'normal'),
-            gorsel_boyutu=data.get('gorsel_boyutu', 100),
-            logo_sol=data.get('logo_sol'),
-            logo_sag=data.get('logo_sag'),
-            logo_boyutu=data.get('logo_boyutu', 80),
-            puan_kutusu_boyutu=data.get('puan_kutusu_boyutu', 100),
-            sik_boslugu=data.get('sik_boslugu', 16),
-            siklar_arasi_bosluk=data.get('siklar_arasi_bosluk', 8),
-            siklar_yatay_bosluk=data.get('siklar_yatay_bosluk', 24),
-            ust_bosluk=data.get('ust_bosluk', 40),
-            alt_bosluk=data.get('alt_bosluk', 40),
-            baslik_katsayisi=data.get('baslik_katsayisi', 100)
-        )
-        db.session.add(yeni_sinav)
+        sinav_id = data.get('sinav_id')
+        yeni_sinav = None
+        
+        if sinav_id:
+            yeni_sinav = SinavKagidi.query.get(sinav_id)
+            
+        if yeni_sinav:
+            yeni_sinav.baslik = data.get('baslik', '')
+            yeni_sinav.egitim_yili = data.get('egitim_yili')
+            yeni_sinav.donem = data.get('donem')
+            yeni_sinav.aciklama = data.get('aciklama')
+            yeni_sinav.tarih = data.get('tarih')
+            yeni_sinav.saat = data.get('saat')
+            yeni_sinav.okul_adi = data.get('okul_adi')
+            yeni_sinav.okul_adi_boyutu = data.get('okul_adi_boyutu', 24)
+            yeni_sinav.egitim_yili_boyutu = data.get('egitim_yili_boyutu', 18)
+            yeni_sinav.donem_boyutu = data.get('donem_boyutu', 16)
+            yeni_sinav.baslik_boyutu = data.get('baslik_boyutu', 16)
+            yeni_sinav.imza_metni = data.get('imza_metni')
+            yeni_sinav.yazi_fontu = data.get('yazi_fontu')
+            yeni_sinav.yazi_boyutu = data.get('yazi_boyutu', 12)
+            yeni_sinav.yazi_rengi = data.get('yazi_rengi', '#000000')
+            yeni_sinav.yazi_stili = data.get('yazi_stili', 'normal')
+            yeni_sinav.gorsel_boyutu = data.get('gorsel_boyutu', 100)
+            yeni_sinav.logo_sol = data.get('logo_sol')
+            yeni_sinav.logo_sag = data.get('logo_sag')
+            yeni_sinav.logo_boyutu = data.get('logo_boyutu', 80)
+            yeni_sinav.puan_kutusu_boyutu = data.get('puan_kutusu_boyutu', 100)
+            yeni_sinav.sik_boslugu = data.get('sik_boslugu', 16)
+            yeni_sinav.siklar_arasi_bosluk = data.get('siklar_arasi_bosluk', 8)
+            yeni_sinav.siklar_yatay_bosluk = data.get('siklar_yatay_bosluk', 24)
+            yeni_sinav.ust_bosluk = data.get('ust_bosluk', 40)
+            yeni_sinav.alt_bosluk = data.get('alt_bosluk', 40)
+            yeni_sinav.baslik_katsayisi = data.get('baslik_katsayisi', 100)
+            
+            # Eski soruları temizle
+            SinavSorusu.query.filter_by(sinav_id=yeni_sinav.id).delete()
+        else:
+            yeni_sinav = SinavKagidi(
+                baslik=data.get('baslik', ''),
+                egitim_yili=data.get('egitim_yili'),
+                donem=data.get('donem'),
+                aciklama=data.get('aciklama'),
+                tarih=data.get('tarih'),
+                saat=data.get('saat'),
+                okul_adi=data.get('okul_adi'),
+                okul_adi_boyutu=data.get('okul_adi_boyutu', 24),
+                egitim_yili_boyutu=data.get('egitim_yili_boyutu', 18),
+                donem_boyutu=data.get('donem_boyutu', 16),
+                baslik_boyutu=data.get('baslik_boyutu', 16),
+                imza_metni=data.get('imza_metni'),
+                yazi_fontu=data.get('yazi_fontu'),
+                yazi_boyutu=data.get('yazi_boyutu', 12),
+                yazi_rengi=data.get('yazi_rengi', '#000000'),
+                yazi_stili=data.get('yazi_stili', 'normal'),
+                gorsel_boyutu=data.get('gorsel_boyutu', 100),
+                logo_sol=data.get('logo_sol'),
+                logo_sag=data.get('logo_sag'),
+                logo_boyutu=data.get('logo_boyutu', 80),
+                puan_kutusu_boyutu=data.get('puan_kutusu_boyutu', 100),
+                sik_boslugu=data.get('sik_boslugu', 16),
+                siklar_arasi_bosluk=data.get('siklar_arasi_bosluk', 8),
+                siklar_yatay_bosluk=data.get('siklar_yatay_bosluk', 24),
+                ust_bosluk=data.get('ust_bosluk', 40),
+                alt_bosluk=data.get('alt_bosluk', 40),
+                baslik_katsayisi=data.get('baslik_katsayisi', 100)
+            )
+            db.session.add(yeni_sinav)
+            
         db.session.flush()
         
         # Seçilen soruları ekle
@@ -756,6 +795,20 @@ def sinav_soru_bosluk_guncelle(sinav_id, soru_id):
         db.session.rollback()
         return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
+
+@app.route('/sinav-soru-sil/<int:sinav_id>/<int:soru_id>', methods=['DELETE'])
+def sinav_soru_sil(sinav_id, soru_id):
+    """Sınavdan bir soruyu kaldırır"""
+    try:
+        sinav_sorusu = SinavSorusu.query.filter_by(sinav_id=sinav_id, soru_id=soru_id).first()
+        if sinav_sorusu:
+            db.session.delete(sinav_sorusu)
+            db.session.commit()
+            return jsonify({'basarili': True, 'mesaj': 'Soru sınavdan kaldırıldı'})
+        return jsonify({'basarili': False, 'mesaj': 'Soru bulunamadı'}), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
 @app.route('/not-girisi')
 @admin_required

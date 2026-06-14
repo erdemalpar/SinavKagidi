@@ -646,10 +646,16 @@
                             </button>
                         </div>
 
-                        <!-- Sayfa Silme İkonu (Burada her zaman erişilebilir yaptık) -->
+                        <!-- Soruyu Kaldır Butonu -->
+                        <button onclick="soruSilOnizleme({{ sinav.id }}, {{ sinav_sorusu.soru_id }}, this)"
+                            class="absolute -top-3 -right-3 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-all z-50 no-print print:hidden flex items-center justify-center cursor-pointer" title="Soruyu Sınavdan Çıkar">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+
+                        <!-- Sayfa Başı Kesme Silme İkonu -->
                         <button onclick="sayfaSil(this)"
-                            class="sayfa-sil-onay-btn absolute -top-4 -right-4 bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-all z-50 no-print flex items-center justify-center {{ 'hidden' if not 'sayfa-basi' in sinav_sorusu.ust_bosluk_stili else '' }}">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            class="sayfa-sil-onay-btn absolute -top-3 right-6 bg-orange-500 text-white p-1.5 rounded-full shadow-lg hover:bg-orange-600 transition-all z-50 no-print print:hidden flex items-center justify-center cursor-pointer {{ 'hidden' if not 'sayfa-basi' in (sinav_sorusu.ust_bosluk_stili|default('')) else '' }}" title="Sayfa Başı Kesmesini İptal Et">
+                            <i data-lucide="file-minus" class="w-4 h-4"></i>
                         </button>
 
 
@@ -803,7 +809,13 @@
                     margin: 0,
                     filename: '{{ sinav.baslik }}.pdf',
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true },
+                    html2canvas: { 
+                        scale: 2, 
+                        useCORS: true,
+                        ignoreElements: function(node) {
+                            return node.classList && node.classList.contains('no-print');
+                        }
+                    },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
@@ -893,6 +905,36 @@
                     }
                 } catch (err) {
                     console.error('Sıralama hatası:', err);
+                    toastGoster('Sistem hatası!', 'error');
+                }
+            }
+
+            async function soruSilOnizleme(sinavId, soruId, btnElement) {
+                if(!confirm("Bu soruyu sınavdan çıkarmak istediğinize emin misiniz?")) return;
+
+                try {
+                    const response = await fetch(`/sinav-soru-sil/${sinavId}/${soruId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const data = await response.json();
+                    if (data.basarili) {
+                        toastGoster('Soru sınavdan çıkarıldı!', 'success');
+                        // Elementi DOM'dan kaldır
+                        const soruBlok = btnElement.closest('.soru-blok');
+                        if (soruBlok) {
+                            soruBlok.remove();
+                        }
+                        // Soru numaralarını yeniden hesapla
+                        const numaralar = document.querySelectorAll('.soru-blok .w-7.h-7');
+                        numaralar.forEach((num, index) => {
+                            num.innerText = index + 1;
+                        });
+                    } else {
+                        toastGoster('Hata: ' + data.mesaj, 'error');
+                    }
+                } catch (err) {
+                    console.error('Silme hatası:', err);
                     toastGoster('Sistem hatası!', 'error');
                 }
             }
