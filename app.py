@@ -1015,11 +1015,14 @@ def oturum_duzenle(oturum_id):
                     for _, row in df.iterrows():
                         try:
                             # 2. Kolon: No (Index 1), 3. Kolon: Ad (Index 2), 4. Kolon: Soyad (Index 3)
-                            no = str(row.iloc[1]).strip() if len(row) > 1 and not pd.isna(row.iloc[1]) else ""
+                            raw_no = str(row.iloc[1]).strip() if len(row) > 1 and not pd.isna(row.iloc[1]) else ""
                             ad = str(row.iloc[2]).strip() if len(row) > 2 and not pd.isna(row.iloc[2]) else ""
                             soyad = str(row.iloc[3]).strip() if len(row) > 3 and not pd.isna(row.iloc[3]) else ""
                             
-                            no = no if no != 'nan' and no != 'None' else ""
+                            try:
+                                no = str(int(float(raw_no))) if raw_no and raw_no not in ('nan', 'None', '') else ""
+                            except:
+                                no = raw_no if raw_no not in ('nan', 'None') else ""
                             tam_ad = f"{ad} {soyad}".strip().upper()
                             
                             if tam_ad and len(tam_ad) > 1:
@@ -1080,6 +1083,82 @@ def oturum_sil(oturum_id):
         return jsonify({'basarili': False, 'mesaj': str(e)}), 400
 
 
+@app.route('/api/yoklama/dosya-sil/<int:oturum_id>', methods=['DELETE'])
+def yoklama_dosya_sil(oturum_id):
+    """Oturuma ait Excel dosyasını diskten siler, öğrenci listesini temizler"""
+    try:
+        oturum = YoklamaOturumu.query.get(oturum_id)
+        if not oturum:
+            return jsonify({'basarili': False, 'mesaj': 'Oturum bulunamadı'}), 404
+
+        # Dosyayı diskten sil
+        if oturum.dosya_yolu:
+            fiziksel_yol = os.path.join(app.root_path, oturum.dosya_yolu.lstrip('/'))
+            if os.path.exists(fiziksel_yol):
+                os.remove(fiziksel_yol)
+
+        # DB'deki dosya yolunu temizle
+        oturum.dosya_yolu = None
+
+        # Öğrenci listesini de temizle
+        YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).delete()
+
+        db.session.commit()
+        return jsonify({'basarili': True, 'mesaj': 'Dosya ve öğrenci listesi silindi'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+
+@app.route('/api/yoklama/ogrenci-sil/<int:oturum_id>', methods=['DELETE'])
+def yoklama_ogrenci_sil(oturum_id):
+    """Bir öğrencinin tüm yoklama kayıtlarını ve liste kaydını siler"""
+    try:
+        data = request.json
+        numara = str(data.get('numara', '')).strip()
+        ad_soyad = str(data.get('ad_soyad', '')).strip().upper()
+
+        if not numara and not ad_soyad:
+            return jsonify({'basarili': False, 'mesaj': 'Numara veya ad-soyad gereklidir'}), 400
+
+        # 1. Tüm haftalara ait yoklama kayıtlarını sil
+        kayit_sorgu = YoklamaKayit.query.filter_by(oturum_id=oturum_id)
+        if numara:
+            kayit_sorgu = kayit_sorgu.filter(
+                db.or_(
+                    YoklamaKayit.numara_kurum == numara,
+                    db.func.upper(YoklamaKayit.ad_soyad) == ad_soyad
+                )
+            )
+        else:
+            kayit_sorgu = kayit_sorgu.filter(db.func.upper(YoklamaKayit.ad_soyad) == ad_soyad)
+
+        silinen_kayit_sayisi = kayit_sorgu.delete(synchronize_session=False)
+
+        # 2. Öğrenci listesinden de sil (varsa)
+        ogr_sorgu = YoklamaOgrenci.query.filter_by(oturum_id=oturum_id)
+        if numara:
+            ogr_sorgu = ogr_sorgu.filter(
+                db.or_(
+                    YoklamaOgrenci.numara == numara,
+                    db.func.upper(YoklamaOgrenci.ad_soyad) == ad_soyad
+                )
+            )
+        else:
+            ogr_sorgu = ogr_sorgu.filter(db.func.upper(YoklamaOgrenci.ad_soyad) == ad_soyad)
+
+        silinen_ogr_sayisi = ogr_sorgu.delete(synchronize_session=False)
+
+        db.session.commit()
+        return jsonify({
+            'basarili': True,
+            'mesaj': f'{ad_soyad} silindi. ({silinen_kayit_sayisi} yoklama kaydı, {silinen_ogr_sayisi} liste kaydı)'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'basarili': False, 'mesaj': str(e)}), 400
+
+
 @app.route('/yoklama')
 @login_required # Hem admin hem öğrenci girebilir
 def yoklama_paneli():
@@ -1100,6 +1179,8 @@ def yoklama_oturum_baslat():
         lng = request.form.get('lng')
         yil = request.form.get('yil')
         oturum_sahibi = request.form.get('oturum_sahibi')
+        konum_dogrulama = request.form.get('konum_dogrulama') == 'true'
+        sure_kisiti = request.form.get('sure_kisiti') == 'true'
 
         # Dosya işlemi (Katılımcı Listesi)
         dosya_yolu = None
@@ -1116,13 +1197,15 @@ def yoklama_oturum_baslat():
                 dosya.save(full_path)
         # 1. Hafta Tarihini Belirle (Genel oturum tarihi için)
         hafta_tarihleri_json = request.form.get('hafta_tarihleri')
-        final_oturum_tarih = datetime.now()
+        now_tarih = datetime.now()
+        final_oturum_tarih = now_tarih
         if hafta_tarihleri_json:
             try:
                 import json
                 ht = json.loads(hafta_tarihleri_json)
                 if ht.get('1'):
                     final_oturum_tarih = datetime.strptime(ht.get('1'), '%Y-%m-%d')
+                    now_tarih = final_oturum_tarih
             except: pass
 
         yeni_oturum = YoklamaOturumu(
@@ -1142,16 +1225,6 @@ def yoklama_oturum_baslat():
         )
         db.session.add(yeni_oturum)
         db.session.flush()
-
-        # Otomatik İlk Günü/Haftayı Oluştur
-        ilk_hafta = YoklamaHaftasi(
-            oturum_id=yeni_oturum.id,
-            hafta_no=1,
-            baslik=f"{now_tarih.strftime('%d.%m.%Y')} Tarihli Yoklama",
-            tarih=now_tarih,
-            aktif=True
-        )
-        db.session.add(ilk_hafta)
 
         # Dosya işlemi ve Öğrenci Listesi (Pandas)
         if 'dosya' in request.files:
@@ -1181,7 +1254,10 @@ def yoklama_oturum_baslat():
                                 raw_ad = str(row.iloc[2]).strip() if len(row) > 2 and not pd.isna(row.iloc[2]) else ""
                                 raw_soyad = str(row.iloc[3]).strip() if len(row) > 3 and not pd.isna(row.iloc[3]) else ""
                                 
-                                no = raw_no if raw_no != 'nan' else ""
+                                try:
+                                    no = str(int(float(raw_no))) if raw_no and raw_no not in ('nan', 'None', '') else ""
+                                except:
+                                    no = raw_no if raw_no != 'nan' else ""
                                 ad_soyad = (f"{raw_ad} {raw_soyad}").strip()
                                 
                                 if ad_soyad and ad_soyad != 'nan' and len(ad_soyad) > 1:
@@ -1331,14 +1407,21 @@ def ogrenci_listesi_guncelle():
         import pandas as pd
         df = pd.read_excel(filepath)
         
-        # Sütun tespiti (Önceki mantık)
-        name_col, numara_col = None, None
+        # Sütun tespiti (Dinamik)
+        name_col, soyad_col, numara_col = None, None, None
         for col in df.columns:
-            if any(x in str(col).lower() for x in ['ad', 'soyad', 'isim', 'ogrenci']): name_col = col
-            if any(x in str(col).lower() for x in ['no', 'numara', 'id', 'student']): numara_col = col
+            col_str = str(col).lower()
+            if any(x in col_str for x in ['no', 'numara', 'id', 'student']): 
+                numara_col = col
+            elif any(x in col_str for x in ['ad soyad', 'isim soyisim', 'öğrenci', 'ogrenci']):
+                name_col = col
+            elif 'ad' in col_str and 'soyad' not in col_str:
+                name_col = col
+            elif 'soyad' in col_str:
+                soyad_col = col
 
         if not name_col or not numara_col:
-            return jsonify({'basarili': False, 'mesaj': 'Excel içinde "Ad Soyad" ve "Numara" sütunları bulunamadı.'}), 400
+            return jsonify({'basarili': False, 'mesaj': 'Excel içinde "Ad (veya Ad Soyad)" ve "Numara" sütunları bulunamadı.'}), 400
 
         # Mevcut listeyi sil ve yenisini ekle
         YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).delete()
@@ -1346,11 +1429,14 @@ def ogrenci_listesi_guncelle():
         sayac = 0
         for _, row in df.iterrows():
             try:
-                raw_no = str(row.iloc[1]).strip() if len(row) > 1 and not pd.isna(row.iloc[1]) else ""
-                raw_ad = str(row.iloc[2]).strip() if len(row) > 2 and not pd.isna(row.iloc[2]) else ""
-                raw_soyad = str(row.iloc[3]).strip() if len(row) > 3 and not pd.isna(row.iloc[3]) else ""
+                raw_no = str(row[numara_col]).strip() if numara_col and not pd.isna(row[numara_col]) else ""
+                raw_ad = str(row[name_col]).strip() if name_col and not pd.isna(row[name_col]) else ""
+                raw_soyad = str(row[soyad_col]).strip() if soyad_col and not pd.isna(row[soyad_col]) else ""
                 
-                no = raw_no if raw_no != 'nan' else ""
+                try:
+                    no = str(int(float(raw_no))) if raw_no and raw_no not in ('nan', 'None', '') else ""
+                except:
+                    no = raw_no if raw_no != 'nan' else ""
                 ad_soyad = (f"{raw_ad} {raw_soyad}").strip()
                 
                 if ad_soyad and ad_soyad != 'nan' and len(ad_soyad) > 1:
@@ -1390,19 +1476,48 @@ def yoklama_kayit_ol():
         if not oturum or not oturum.aktif:
             return jsonify({'basarili': False, 'mesaj': 'Oturum kapalı veya geçersiz.'}), 403
 
+        def tr_upper(text):
+            if not text: return ""
+            return text.replace("i", "İ").replace("ı", "I").upper().strip()
+
         # KATMAN 1: ÖĞRENCİ LİSTESİ DOĞRULAMASI (KAPSAYICI DENETİM)
-        ad_soyad_raw = str(data.get('ad_soyad', '')).strip().lower()
-        numara_raw = str(data.get('numara_kurum', '')).strip()
-        liste_disi = False
+        ad_soyad_raw = str(data.get('ad_soyad', '')).strip()
+        numara_raw = str(data.get('numara_kurum', '')).strip().replace(' ', '')
         
+        ad_soyad_upper = tr_upper(ad_soyad_raw)
+        data['ad_soyad'] = ad_soyad_upper
+        data['numara_kurum'] = numara_raw
+        liste_disi = False
+
+        # Numara normalize: "2336020016.0" → "2336020016"
+        try:
+            numara_normalize = str(int(float(numara_raw))) if numara_raw else numara_raw
+        except:
+            numara_normalize = numara_raw
+
         # Eğer bu ders için Excel mühürlendiyse (Liste doluysa)
         liste_sayisi = YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).count()
         if liste_sayisi > 0:
-            eslesen_ogr = YoklamaOgrenci.query.filter(
-                YoklamaOgrenci.oturum_id == oturum_id,
-                (YoklamaOgrenci.numara == numara_raw) | (db.func.lower(YoklamaOgrenci.ad_soyad) == ad_soyad_raw)
-            ).first()
-            
+            tum_liste = YoklamaOgrenci.query.filter_by(oturum_id=oturum_id).all()
+            eslesen_ogr = None
+            for ogr in tum_liste:
+                # Numara eşleşmesi (float normalize dahil)
+                ogr_numara = str(ogr.numara).strip().replace(' ', '') if ogr.numara else ''
+                try:
+                    ogr_numara_norm = str(int(float(ogr_numara))) if ogr_numara else ogr_numara
+                except:
+                    ogr_numara_norm = ogr_numara
+
+                numara_eslesme = (ogr_numara_norm == numara_normalize or ogr_numara == numara_raw)
+
+                # Ad-Soyad eşleşmesi (Türkçe karakter duyarlı)
+                ogr_ad_upper = tr_upper(ogr.ad_soyad)
+                ad_eslesme = (ogr_ad_upper == ad_soyad_upper)
+
+                if numara_eslesme or ad_eslesme:
+                    eslesen_ogr = ogr
+                    break
+
             if eslesen_ogr:
                 # Listede VAR: Veriyi sarsılmaz şekilde sabitle
                 data['ad_soyad'] = eslesen_ogr.ad_soyad
@@ -1420,11 +1535,13 @@ def yoklama_kayit_ol():
         
         if oturum.konum_dogrulama and oturum.hedef_lat and oturum.hedef_lng:
             if user_lat and user_lng:
+                # Konum geldi → mesafe kontrolü yap
                 mesafe = haversine(oturum.hedef_lng, oturum.hedef_lat, user_lng, user_lat)
                 if mesafe > oturum.tolerans_metre:
                     mesafe_uygun = False
             else:
-                return jsonify({'basarili': False, 'mesaj': 'Konum paylaşımı zorunludur.'}), 400
+                # Konum alınamadı (HTTP / izin kapalı) → konumsuz kaydet, engelleme
+                pass
         
         if not mesafe_uygun:
             return jsonify({'basarili': False, 'mesaj': f'Konum derslikten çok uzak! ({int(mesafe)}m)'}), 400

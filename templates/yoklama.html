@@ -67,7 +67,7 @@
                         </div>
                         <div class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded">
                             <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-500"></i>
-                            <span>{{ oturum.kayitlar|length }} Katılımcı</span>
+                            <span>{{ oturum.ogrenciler|length }} Liste / {{ oturum.unique_katilimci_sayisi }} Katılımcı</span>
                         </div>
                     </div>
                     {% if oturum.aciklama and oturum.aciklama != 'None' %}
@@ -305,8 +305,12 @@
             <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-1">Katılımcı Listesi (Excel - Opsiyonel)</label>
                 <div id="yuklu_dosya_bilgisi" class="hidden mb-2 p-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium flex items-center gap-2 border border-emerald-100 shadow-sm">
-                    <i data-lucide="file-check" class="w-4 h-4"></i>
-                    <span id="yuklu_dosya_metni">Şu an bir liste yüklü.</span>
+                    <i data-lucide="file-check" class="w-4 h-4 shrink-0"></i>
+                    <span id="yuklu_dosya_metni" class="flex-1 truncate">Şu an bir liste yüklü.</span>
+                    <button onclick="dosyaSil()" title="Listeyi Sil"
+                        class="ml-auto p-1 rounded-lg hover:bg-red-100 text-emerald-600 hover:text-red-600 transition-all shrink-0">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
                 </div>
                 <div class="relative">
                     <input type="file" id="oturum_dosya" accept=".xlsx, .xls"
@@ -337,47 +341,44 @@
 
 <!-- QR Kod Modalı -->
 <div id="qrModal"
-    class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[200] flex items-center justify-center p-2">
-    <div class="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl animate-scale-up overflow-hidden">
-        <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-            <h3 id="qr_baslik" class="text-3xl font-black text-slate-800 tracking-tight">Yoklama QR Kod</h3>
-            <button onclick="modalKapat('qrModal')"
-                class="p-3 hover:bg-red-50 hover:text-red-600 rounded-full text-slate-400 transition-all">
-                <i data-lucide="x" class="w-10 h-10"></i>
-            </button>
+    class="hidden fixed inset-0 bg-slate-900 z-[200] flex flex-col">
+
+    <!-- Üst Bant: Başlık + Kapat -->
+    <div class="flex items-center justify-between px-6 py-3 bg-slate-900 border-b border-slate-700 shrink-0">
+        <div>
+            <h3 id="qr_baslik" class="text-lg font-black text-white tracking-tight">Yoklama QR Kod</h3>
+            <p class="text-xs text-slate-400">Her 10 saniyede bir otomatik yenilenir.</p>
         </div>
+        <button onclick="modalKapat('qrModal')"
+            class="p-2 bg-slate-700 hover:bg-red-600 text-white rounded-xl transition-all flex items-center gap-2 text-sm font-bold">
+            <i data-lucide="x" class="w-5 h-5"></i>
+            <span class="hidden sm:inline">Kapat</span>
+        </button>
+    </div>
 
-        <div class="p-4 md:p-12 flex flex-col items-center justify-center space-y-8">
-            <!-- QR Kod Çerçevesi (Devasa) -->
-            <div class="relative bg-white p-4 md:p-10 rounded-[50px] shadow-inner border-8 border-slate-50 w-full max-w-[700px] aspect-square flex items-center justify-center group">
-                <img id="qr_gorsel" src="" class="w-full h-full object-contain image-render-pixel" alt="QR Kod">
-                
-                <!-- Geri Sayım Rozeti -->
-                <div class="absolute top-6 right-6 bg-slate-900 text-white text-2xl font-black px-5 py-2 rounded-2xl shadow-xl border-4 border-white">
-                    <span id="qr_sayac">10</span>s
-                </div>
-            </div>
-
-            <div class="w-full max-w-[700px] space-y-6 text-center">
-                <!-- Progress Bar (Dev) -->
-                <div class="w-full bg-slate-100 h-6 rounded-full overflow-hidden p-1 shadow-inner border border-slate-200">
-                    <div id="qr_progress" class="gradient-primary h-full rounded-full transition-all duration-100 ease-linear shadow-sm"
-                        style="width: 100%"></div>
-                </div>
-                
-                <p class="text-xl font-medium text-slate-500 animate-pulse">
-                    <i data-lucide="shield-check" class="w-6 h-6 inline-block mr-2 text-indigo-500"></i>
-                    Güvenlik nedeniyle her 10 saniyede bir otomatik yenilenir.
-                </p>
+    <!-- QR Alan: Kalan tüm alan -->
+    <div class="flex-1 flex items-center justify-center bg-slate-900 p-4 min-h-0">
+        <div class="relative bg-white rounded-2xl shadow-2xl p-4 flex items-center justify-center"
+             style="width: min(70vh, 90vw); height: min(70vh, 90vw);">
+            <img id="qr_gorsel" src="" class="w-full h-full object-contain" alt="QR Kod"
+                 style="image-rendering: pixelated;">
+            <!-- Geri Sayım -->
+            <div class="absolute top-4 right-4 bg-slate-900 text-white text-xl font-black px-4 py-2 rounded-xl shadow-xl border-2 border-white">
+                <span id="qr_sayac">10</span>s
             </div>
         </div>
+    </div>
 
-        <div class="p-8 bg-slate-50/80 border-t border-slate-100">
-            <button onclick="modalKapat('qrModal')"
-                class="w-full bg-slate-900 text-white py-6 rounded-3xl font-black text-2xl shadow-xl hover:bg-slate-800 transition-all active:scale-95 uppercase tracking-widest">
-                Ekranı Kapat
-            </button>
+    <!-- Alt Bant: Progress + Kapat -->
+    <div class="px-6 py-3 bg-slate-800 border-t border-slate-700 shrink-0 space-y-2">
+        <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+            <div id="qr_progress" class="gradient-primary h-full rounded-full transition-all duration-100 ease-linear"
+                style="width: 100%"></div>
         </div>
+        <button onclick="modalKapat('qrModal')"
+            class="w-full bg-white text-slate-900 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all active:scale-95 uppercase tracking-widest">
+            Ekranı Kapat
+        </button>
     </div>
 </div>
 
@@ -406,7 +407,7 @@
             <table class="w-full border-collapse">
                 <thead>
                     <tr id="tablo_basliklar"
-                        class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 sticky top-0 z-10">
+                        class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 sticky top-0 z-[50]">
                         <!-- JS ile dolacak: Ad Soyad, Numara, Hafta 1, Hafta 2... -->
                     </tr>
                 </thead>
@@ -439,6 +440,7 @@
     let currentOturumId = null; // Global oturum takibi için
     let progressInterval = null; // For the progress bar animation
     let countdownInterval = null; // For the countdown timer animation
+    let katilimciInterval = null; // Katılımcı anlık yenileme
 
     // Modal Kapatma Fonksiyonu (Global ve Güvenli)
     function modalKapat(id) {
@@ -452,6 +454,10 @@
                 clearInterval(progressInterval);
                 qrInterval = null;
                 progressInterval = null;
+            }
+            if (id === 'katilimciModal') {
+                clearInterval(katilimciInterval);
+                katilimciInterval = null;
             }
         } else {
             console.error('Modal kapatılamadı, element bulunamadı:', id);
@@ -1087,17 +1093,19 @@
         window.location.href = `/api/admin/yoklama-excel/${oturumId}`;
     }
 
-    async function katilimcilariGoster(oturumId, baslik) {
+    async function katilimcilariGoster(oturumId, baslik, isRefresh = false) {
         currentOturumId = oturumId; // Global ID'yi güncelle
         try {
-            document.getElementById('katilimci_baslik').innerText = baslik;
-            document.getElementById('katilimciModal').classList.remove('hidden');
-
             const thead = document.getElementById('tablo_basliklar');
             const tbody = document.getElementById('katilimci_liste_body');
 
-            thead.innerHTML = '<tr><td class="p-4 text-center">Yükleniyor...</td></tr>';
-            tbody.innerHTML = '';
+            if (!isRefresh) {
+                document.getElementById('katilimci_baslik').innerText = baslik;
+                document.getElementById('katilimciModal').classList.remove('hidden');
+
+                thead.innerHTML = '<tr><td class="p-4 text-center">Yükleniyor...</td></tr>';
+                tbody.innerHTML = '';
+            }
 
             const res = await fetch(`/api/yoklama/ders-detay/${oturumId}`);
             const data = await res.json();
@@ -1150,11 +1158,15 @@
 
             // 2. Akıllı Liste: Excel'de olmayan ama yoklamaya katılanları tespit et
             const tumOgrenciler = [...data.ogrenciler];
+            const normNum = (n) => String(n || "").trim().replace(/\.0$/, "");
+            const normStr = (s) => String(s || "").trim().toLocaleLowerCase('tr-TR');
+
             data.yoklamalar.forEach(y => {
-                const varMi = tumOgrenciler.some(o => 
-                    String(o.numara).trim() === String(y.numara).trim() || 
-                    String(o.ad_soyad).trim().toLowerCase() === String(y.ad_soyad).trim().toLowerCase()
-                );
+                const varMi = tumOgrenciler.some(o => {
+                    const numMatch = normNum(o.numara) !== "" && normNum(o.numara) === normNum(y.numara);
+                    const adMatch = normStr(o.ad_soyad) !== "" && normStr(o.ad_soyad) === normStr(y.ad_soyad);
+                    return numMatch || adMatch;
+                });
                 
                 if (!varMi) {
                     tumOgrenciler.push({
@@ -1176,28 +1188,35 @@
                                 <div class="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-[10px] font-black text-slate-500 shrink-0">
                                     ${index + 1}
                                 </div>
-                                <div class="overflow-hidden">
-                                    <div class="font-bold text-slate-800 text-sm truncate uppercase tracking-tight">${ogr.ad_soyad}</div>
-                                    <div class="flex items-center gap-2 mt-0.5">
-                                        <i data-lucide="hash" class="w-3.5 h-3.5 text-slate-300"></i>
-                                        <span class="text-[10px] font-mono font-bold text-indigo-500">${ogr.numara || '<span class="text-slate-300 italic font-normal">Numara Yok</span>'}</span>
-                                        ${ogr.is_extra ? '<span class="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[8px] font-black rounded border border-amber-100 uppercase ml-1">Liste Dışı</span>' : ''}
+                                <div class="overflow-hidden min-w-0 flex-1">
+                                    <div class="font-bold text-slate-800 text-sm truncate uppercase tracking-tight leading-tight">${ogr.ad_soyad}</div>
+                                    <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                        <span class="text-[10px] font-mono font-medium text-indigo-400">${ogr.numara || '<span class="text-slate-300 italic">-</span>'}</span>
+                                        ${ogr.is_extra ? '<span class="px-1 py-0.5 bg-amber-50 text-amber-600 text-[8px] font-black rounded border border-amber-100 uppercase">Liste Dışı</span>' : ''}
                                     </div>
                                 </div>
+                                <button onclick="ogrenciSil('${oturumId}', '${(ogr.numara||'').replace(/'/g,"\\'")}', '${(ogr.ad_soyad||'').replace(/'/g,"\\'")}', '${baslik}')"
+                                    title="Öğrenciyi Sil"
+                                    class="opacity-0 group-hover:opacity-100 transition-all p-1.5 rounded-lg hover:bg-red-100 text-slate-300 hover:text-red-500 shrink-0">
+                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                </button>
                             </div>
                         </td>`;
 
                 data.haftalar.forEach(h => {
                     // Akıllı Eşleşme: Liste dışı olanları da bul
                     const kayit = data.yoklamalar.find(y => {
-                        const haftaEslesme = Number(y.hafta_id) === Number(h.id);
-                        const numaraEslesme = String(y.numara || "").trim() === String(ogr.numara || "").trim();
-                        const isimEslesme = String(y.ad_soyad || "").trim().toLowerCase() === String(ogr.ad_soyad || "").trim().toLowerCase();
-                        return haftaEslesme && (numaraEslesme || isimEslesme);
+                        if (Number(y.hafta_id) !== Number(h.id)) return false;
+                        const numMatch = normNum(ogr.numara) !== "" && normNum(ogr.numara) === normNum(y.numara);
+                        const adMatch = normStr(ogr.ad_soyad) !== "" && normStr(ogr.ad_soyad) === normStr(y.ad_soyad);
+                        return numMatch || adMatch;
                     });
 
                     const varMi = !!kayit;
-                    const isExtra = kayit ? kayit.liste_disi : false;
+                    // Eğer backend'den liste_disi gelmiş olsa bile, frontend'de eşleştiği için artık extra değildir!
+                    // Ama tikin rengi yeşil mi olsun turuncu mu? Listeye dahilse yeşil olmalı.
+                    const isExtra = ogr.is_extra; 
+
 
                     row += `
                         <td class="px-2 py-3 border-b text-center ${h.is_current ? 'bg-indigo-50/30' : ''}">
@@ -1218,9 +1237,23 @@
             // Lucide ikonlarını canlandır
             lucide.createIcons();
 
+            // İlk açılışta 5 saniyelik interval başlat
+            if (!isRefresh) {
+                if (katilimciInterval) clearInterval(katilimciInterval);
+                katilimciInterval = setInterval(() => {
+                    const modal = document.getElementById('katilimciModal');
+                    if (!modal.classList.contains('hidden')) {
+                        katilimcilariGoster(oturumId, baslik, true);
+                    } else {
+                        clearInterval(katilimciInterval);
+                        katilimciInterval = null;
+                    }
+                }, 5000);
+            }
+
         } catch (e) {
             console.error('Tablo hatası:', e);
-            toastGoster('Katılımcı listesi yüklenemedi.', 'error');
+            if (!isRefresh) toastGoster('Katılımcı listesi yüklenemedi.', 'error');
         }
     }
 
@@ -1326,6 +1359,76 @@
                     toastGoster(data.mesaj, 'error');
                 }
             } catch (e) { toastGoster('Hata oluştu', 'error'); }
+        }
+    }
+
+    // Öğrenciyi Listeden ve Yoklama Kayıtlarından Silme
+    async function ogrenciSil(oturumId, numara, adSoyad, baslik) {
+        const onay = await Swal.fire({
+            title: 'Öğrenciyi Sil?',
+            html: `<b>${adSoyad}</b> isimli öğrencinin tüm yoklama kayıtları ve listeden kaydı silinecek.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Evet, Sil',
+            cancelButtonText: 'İptal'
+        });
+
+        if (!onay.isConfirmed) return;
+
+        try {
+            const res = await fetch(`/api/yoklama/ogrenci-sil/${oturumId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ numara, ad_soyad: adSoyad })
+            });
+            const data = await res.json();
+            if (data.basarili) {
+                toastGoster(data.mesaj || 'Öğrenci silindi.', 'success');
+                katilimcilariGoster(oturumId, baslik); // Tabloyu tazele
+            } else {
+                toastGoster(data.mesaj || 'Silme başarısız.', 'error');
+            }
+        } catch (e) {
+            console.error('Öğrenci silme hatası:', e);
+            toastGoster('Bağlantı hatası oluştu.', 'error');
+        }
+    }
+
+    // Yüklü Dosyayı Silme Fonksiyonu
+    async function dosyaSil() {
+        const oturumId = document.getElementById('oturum_edit_id').value;
+        if (!oturumId) {
+            toastGoster('Önce bir oturum seçilmelidir.', 'error');
+            return;
+        }
+
+        const onay = await Swal.fire({
+            title: 'Listeyi Sil?',
+            text: 'Yüklü katılımcı listesi ve tüm öğrenci kayıtları silinecek!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Evet, Sil',
+            cancelButtonText: 'İptal'
+        });
+
+        if (!onay.isConfirmed) return;
+
+        try {
+            const res = await fetch(`/api/yoklama/dosya-sil/${oturumId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.basarili) {
+                document.getElementById('yuklu_dosya_bilgisi').classList.add('hidden');
+                document.getElementById('yuklu_dosya_metni').innerText = 'Şu an bir liste yüklü.';
+                document.getElementById('oturum_dosya').value = '';
+                toastGoster('Liste başarıyla silindi.', 'success');
+            } else {
+                toastGoster(data.mesaj || 'Silme başarısız.', 'error');
+            }
+        } catch (e) {
+            console.error('Dosya silme hatası:', e);
+            toastGoster('Bağlantı hatası oluştu.', 'error');
         }
     }
 

@@ -211,6 +211,11 @@ class YoklamaOturumu(db.Model):
     haftalar = db.relationship('YoklamaHaftasi', backref='oturum', cascade='all, delete-orphan')
     ogrenciler = db.relationship('YoklamaOgrenci', backref='oturum', cascade='all, delete-orphan')
 
+    @property
+    def unique_katilimci_sayisi(self):
+        """Bu oturuma en az bir kere katılmış eşsiz katılımcı sayısı"""
+        return len(set([k.numara_kurum for k in self.kayitlar]))
+
     def __repr__(self):
         return f'<YoklamaOturumu {self.baslik}>'
 
