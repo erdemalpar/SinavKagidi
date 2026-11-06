@@ -23,6 +23,10 @@ from models import db, Soru, SinavAyarlari, SinavKagidi, SinavSorusu, Ayarlar, Y
 # db'yi app ile başlat
 db.init_app(app)
 
+# Eksik tabloları oluştur (yeni kurulumda veritabanı boş gelir)
+with app.app_context():
+    db.create_all()
+
 # JWT Yapılandırması
 from flask_jwt_extended import JWTManager, create_access_token, decode_token
 import qrcode

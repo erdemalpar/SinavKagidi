@@ -7,10 +7,10 @@
     <title>{% block title %}Sınav Kağıdı Hazırlama{% endblock %}</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ url_for('static', filename='vendor/tailwind.js') }}"></script>
     <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="{{ url_for('static', filename='vendor/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/lucide.min.js') }}"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
