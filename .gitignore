@@ -1,16 +1,15 @@
+# Python önbellek dosyaları (her çalıştırmada otomatik yeniden oluşur)
 __pycache__/
 *.py[cod]
 *$py.class
-instance/
 .pytest_cache/
 .DS_Store
-*.db
-*.sqlite3
+
+# Sanal ortam: bilgisayara özeldir, yeni bilgisayarda
+# "pip install -r requirements.txt" ile yeniden kurulur
 env/
 venv/
-.env
-static/uploads/*
-!static/uploads/.gitkeep
 .venv/
-static/yuklemeler/*
-!static/yuklemeler/.gitkeep
+
+# Not: Veritabanı (instance/, *.db) ve yüklenen dosyalar
+# (static/uploads, static/yuklemeler) bilerek depoya dahil edilmektedir.
